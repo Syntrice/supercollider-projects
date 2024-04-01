@@ -1,10 +1,17 @@
+// Server Setup
 (
 o = Server.default.options;
 o.device = "ASIO : Focusrite USB ASIO";
 Server.default.reboot;"D:/Development/Supercollider/wind_modeling.scd"
 )
 
+// Piece Arguments
+(
+~tempo = 60;
+~signiture = 4;
+)
 
+// SynthDefs
 (
 SynthDef.new(\noise_engine) {
 	var noise, partials, band_width, freq, temp, amp_env, send, dtune;
@@ -65,13 +72,12 @@ SynthDef.new(\noise_engine) {
 }.add;
 )
 
-~tempo = 60;
-
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(4)});
-
-Ndef(\band_width, {\val.kr(5)})
-
+// Piece
 (
+
+t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+Ndef(\band_width, {\val.kr(5)});
+
 p = Pbind(
 	\instrument, \noise_engine,
 	\dur, 2,
@@ -82,40 +88,3 @@ p = Pbind(
 	\band_width, Ndef(\band_width)
 ).play(t, quant: 4);
 )
-
-Ndef(\band_width).xset(\val, 5)
-Ndef(\band_width).gui;
-
-
-~control_rate = 8;
-
-(
-r = Routine({
-	var env, times;
-	env = Env([5,50,5], [20, 20]);
-
-	times = env.totalDuration.postln * ~control_rate;
-	times.do{ |i|
-		i = i + 1;
-		env.at(~control_rate.reciprocal * i).postln;
-		Ndef(\band_width).xset(\val, env.at(~control_rate.reciprocal * i));
-		~control_rate.reciprocal.wait;
-	};
-});
-)
-
-r.play(t, quant:4);
-
-(
-r = Routine({
-	arg start = 5;
-	Ndef(\band_width).fadeTime = ~control_rate.reciprocal;
-	Array.interpolation(~control_rate * 32, 5, 200).do({ |n|
-		Ndef(\band_width).xset(\val, n);
-		~control_rate.reciprocal.wait;
-	});
-	\done.postln;
-});
-)
-
-r.play(t, quant:4);
