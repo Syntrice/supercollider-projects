@@ -115,74 +115,121 @@ SynthDef.new(\noise_engine) {
 };
 )
 
+// Binds an Ndef to a pattern parameter and modulates it
+(
+~modulatePattern = {
+	arg pattern, parameter, env, t, control_rate = 44100 / 64;
+	var ndef_name;
 
-Pbindef(\pattern1,
-	\instrument, \noise_engine,
-	\dur, 1,
-	\degree, Pxrand([[0,4,7],[-1,5,8],[-3,1,5]],inf),
-	\pan, Pwhite(-0.8,0.8,inf),
-	\atk, 0.05,
-	\rel, 4,
-	\amp, Pwhite(0.3,0.75),
-	\band_width, Ndef(\band_width),
+	ndef_name = pattern ++ "_" ++ parameter;
+
+	Ndef(ndef_name.asSymbol, {\val.kr(env.at(0))});
+	Pbindef(pattern.asSymbol, parameter.asSymbol, Ndef(ndef_name.asSymbol));
+	~parameterChange.(Ndef(ndef_name.asSymbol), env, t, control_rate);
+
+};
+)
+
+// Binds an Ndef to a pattern parameter with the specified function
+(
+~bindFunc = {
+	arg pattern, parameter, func;
+	var ndef_name;
+
+	ndef_name = pattern ++ "_" ++ parameter;
+
+	Ndef(ndef_name.asSymbol, func);
+	Pbindef(pattern.asSymbol, parameter.asSymbol, Ndef(ndef_name.asSymbol));
+};
+)
+
+// Frees a bound Ndef from a pattern, replacing the parameter with specified value
+(
+~freeNdef = {
+	arg pattern, parameter, value;
+	var ndef_name;
+
+	ndef_name = pattern ++ "_" ++ parameter;
+	Pbindef(pattern.asSymbol, parameter.asSymbol, value);
+	Ndef(ndef_name.asSymbol).clear;
+}
 )
 
 
-// Patterns
-
-// Piece
-
-// Piece Arguments
+// Tempo Arguments
 (
 ~tempo = 60;
 ~signiture = 4;
+t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+)
+
+
+
+Pbindef.clear;
+
+(
+Pbindef(\pattern1,
+	\instrument, \noise_engine,
+	\dur, Pwhite(1,3, inf),
+	\freq, Pexprand(220,880, inf),
+	\pan, Pwhite(-0.8,0.8,inf),
+	\atk, 6,
+	\rel, 6,
+	\amp, Pwhite(0.3,0.75),
+	\band_width, 100,
+)
 )
 
 (
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
-
-r = Routine({
-	Pbindef(\pattern1).clear;
-
-	Ndef(\band_width, {LFNoise1.kr(4.reciprocal).range(5,20)});
-
-	Pbindef.new(\pattern1,
+Pbindef(\pattern2,
 	\instrument, \noise_engine,
-	\dur, 1,
-	\degree, Pxrand([[0,4,7],[-1,5,8],[-3,1,5]],inf),
+	\dur, Pwhite(3,4, inf),
+	\freq, Pexprand(40,120, inf),
 	\pan, Pwhite(-0.8,0.8,inf),
-	\atk, 0.05,
-	\rel, 4,
+	\atk, 3,
+	\rel, 3,
 	\amp, Pwhite(0.3,0.75),
-	\band_width, Ndef(\band_width););
-
-	Pbindef(\pattern1).play(t, quant:4);
-
-	8.wait;
-
-	~tempoChange.(Env([60,180],[8]),t,8).wait;
-
-	8.wait;
-
-	// todo - make wrapper function
-	// ~modulatePattern.(\pattern1, \atk, env, t)
-	// ~wrapFunction.(\pattern, \atk, func)
-
-	Ndef(\atk, {\val.kr(0.05)});
-	Pbindef(\pattern1, \atk, Ndef(\atk));
-	~parameterChange.(Ndef(\atk), Env([0.05,1,0.05],[10]), t).wait;
-
-	8.wait;
-
-	Ndef(\dtune, {\val.kr(0.01)});
-	Pbindef(\pattern1, \dtune, Ndef(\dtune));
-	~parameterChange.(Ndef(\dtune), Env([0.01,5,0.01],[20],6), t).wait;
-
-	~tempoChange.(Env([180,60],[8]),t,8).wait;
-	Ndef(\band_width, {SinOsc.kr(4).range(5,20)});
-	16.wait;
-	Pbindef(\pattern1).stop;
-});
-
-r.play(t, quant:4);
+	\band_width, 100,
 )
+)
+
+Pbindef(\pattern1).play(t, quant:4);
+
+~modulatePattern.(\pattern1, \band_width, Env([100,50],[20]), t);
+
+(
+~modulatePattern.(\pattern1, \rel, Env([6,3],[20]), t);
+~modulatePattern.(\pattern1, \atk, Env([6,3],[20]), t);
+)
+
+~modulatePattern.(\pattern1, \band_width, Env([50,20],[20]), t);
+
+Pbindef(\pattern2).play(t, quant:4);
+
+(
+~bindFunc.(\pattern1, \band_width, {LFNoise1.kr(3.reciprocal).range(10,30)});
+~bindFunc.(\pattern1, \dtune, {LFNoise1.kr(3.reciprocal).range(0.01,0.05)});
+)
+
+(
+Pbindef(\pattern1, \dur, Pwhite(2,3,inf));
+)
+
+(
+Pbindef(\pattern1a,
+	\instrument, \noise_engine,
+	\dur, Pwhite(1,3, inf),
+	\freq, Pexprand(120,240, inf),
+	\pan, Pwhite(-0.8,0.8,inf),
+	\atk, 2,
+	\rel, 3,
+	\amp, Pwhite(0.3,0.75),
+	\band_width, 15,
+)
+)
+
+Pbindef(\pattern1a).play;
+~modulatePattern.(\pattern1a, \band_width, Env([100,50],[20]), t);
+~modulatePattern.(\pattern1a, \band_width, Env([100,15],[10]), t);
+
+
