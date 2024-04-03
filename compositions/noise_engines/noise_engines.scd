@@ -66,7 +66,7 @@ SynthDef.new(\noise_engine) {
 }.add;
 )
 
-// functions
+// Helper functions
 
 (
 ~tempoChange = {
@@ -83,10 +83,31 @@ SynthDef.new(\noise_engine) {
 		//i.postln;
 		//env.at(i).postln;
 		if(i < duration) {clock.tempo / control_rate} {
-			\done.postln
+			\done.postln;
 		};
 	});
-	duration.postln;
+	duration;
+};
+)
+
+(
+~scheduleFunc = {
+
+	// Uses an envelope over a period of time, passing the control steps to a function
+	arg func, env, clock = TempoClock.default, control_rate = 44100 / 64;
+	var duration, i;
+
+	i = 0.0;
+	duration = env.totalDuration;
+	clock.schedAbs(clock.nextBar, {
+		func.(env.at(i));
+		i = i + (clock.tempo / control_rate);
+		//i.postln;
+		//env.at(i).postln;
+		if(i < duration) {clock.tempo / (control_rate)} {
+			func.(env.at(env.totalDuration)); \done.postln;
+		};
+	});
 	duration;
 };
 )
@@ -107,10 +128,9 @@ SynthDef.new(\noise_engine) {
 		//i.postln;
 		env.at(i).postln;
 		if(i < duration) {clock.tempo / (control_rate)} {
-			\done.postln; parameter.set(\val, env.at(env.totalDuration));
+			parameter.set(\val, env.at(env.totalDuration)); \done.postln;
 		};
 	});
-	duration.postln;
 	duration;
 };
 )
@@ -155,6 +175,7 @@ SynthDef.new(\noise_engine) {
 }
 )
 
+// ---------------------------------------------------------------------------------------------
 
 // Tempo Arguments
 (
@@ -163,9 +184,7 @@ SynthDef.new(\noise_engine) {
 t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
 )
 
-
-
-Pbindef.clear;
+// Piece
 
 (
 Pbindef(\pattern1,
@@ -175,19 +194,6 @@ Pbindef(\pattern1,
 	\pan, Pwhite(-0.8,0.8,inf),
 	\atk, 6,
 	\rel, 6,
-	\amp, Pwhite(0.3,0.75),
-	\band_width, 100,
-)
-)
-
-(
-Pbindef(\pattern2,
-	\instrument, \noise_engine,
-	\dur, Pwhite(3,4, inf),
-	\freq, Pexprand(40,120, inf),
-	\pan, Pwhite(-0.8,0.8,inf),
-	\atk, 3,
-	\rel, 3,
 	\amp, Pwhite(0.3,0.75),
 	\band_width, 100,
 )
@@ -203,6 +209,19 @@ Pbindef(\pattern1).play(t, quant:4);
 )
 
 ~modulatePattern.(\pattern1, \band_width, Env([50,20],[20]), t);
+
+(
+Pbindef(\pattern2,
+	\instrument, \noise_engine,
+	\dur, Pwhite(3,4, inf),
+	\freq, Pexprand(40,120, inf),
+	\pan, Pwhite(-0.8,0.8,inf),
+	\atk, 3,
+	\rel, 3,
+	\amp, Pwhite(0.3,0.75),
+	\band_width, 100,
+)
+)
 
 Pbindef(\pattern2).play(t, quant:4);
 
