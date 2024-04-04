@@ -66,7 +66,47 @@ SynthDef.new(\noise_engine) {
 }.add;
 )
 
-// Helper functions
+// SynthDefs
+(
+SynthDef.new(\tap) {
+	var noise, freq, amp_env, send, atk, rel;
+
+	// Generate noise signal
+	noise = WhiteNoise.ar();
+
+	freq = \freq.kr(5000);
+
+	atk = \atk.ir(0.005);
+	rel = \rel.ir(1);
+
+	// Filter noise signal
+	noise = LPF.ar(noise, freq * Env([1,0.5],rel,-16).kr());
+
+	// Amplitude Envelope
+	amp_env = Env([0,1,0],[atk,rel],[1,-16]).ar(Done.freeSelf);
+
+	// Amp signal
+	send = noise * amp_env * AmpCompA.kr(freq) * \amp.kr(1);
+
+	// Pan signal
+	send = Pan2.ar(send, \pan.kr(0));
+
+
+	// Output
+	Out.ar(\out.kr(0), send)
+}.add;
+)
+
+(
+SynthDef.new(\reverb) {
+	arg in;
+	var sig;
+	sig = In.ar(in, 2);
+
+	sig = FreeVerb2.ar(sig[0],sig[1], \mix.kr(0.33), \room.kr(0.5));
+	Out.ar(\out.kr(0), sig);
+}.add;
+)
 
 (
 ~tempoChange = {
@@ -251,4 +291,78 @@ Pbindef(\pattern1a).play;
 ~modulatePattern.(\pattern1a, \band_width, Env([100,50],[20]), t);
 ~modulatePattern.(\pattern1a, \band_width, Env([100,15],[10]), t);
 
+Pbindef(\pattern1, \dur, 1);
+Pbindef(\pattern1, \atk, 0.5);
 
+Pbindef(\pattern1, \atk, 0.5);
+Pbindef(\pattern1, \freq, nil );
+Pbindef(\pattern1, \degree, Prand([[0,1,4],[0,3,2],[6,4,7],[2,4,3]], inf));
+
+~modulatePattern.(\pattern1a, \band_width, Env([100,50],[20]), t);
+
+
+(
+Pbindef(\pattern3,
+	\instrument, \noise_engine,
+	\dur, 4,
+	\degree, Pxrand([0,2,4,6,8],inf),
+	\pan, Pwhite(-0.8,0.8,inf),
+	\atk, 2,
+	\rel, 3,
+	\amp, Pwhite(0.3,0.75),
+	\band_width, 5,
+)
+)
+Pbindef(\pattern3).play(t, quant:4);
+
+(
+Pbindef(\pattern4,
+	\instrument, \noise_engine,
+	\dur, 1/3,
+	\degree, Pxrand([0,2,4,6,8],inf),
+	\ctranspose, 12,
+	\pan, Pwhite(-0.8,0.8,inf),
+	\atk, 0.05,
+	\rel, 0.01,
+	\amp, Pwhite(0.3,0.5),
+	\band_width, 20,
+)
+)
+Pbindef(\pattern4).play(t, quant:4);
+
+~tempoChange.(Env([60,90],[10]), t);
+
+Pbindef(\pattern4, \band_width, 70);
+
+
+Pbindef(\pattern1, \dur, 2, inf);
+
+
+Pbindef(\pattern4).play(t, quant:4);
+
+
+// Tapping:
+
+~reverbBus = Bus.audio(s, 2);
+Synth(\reverb, [\in, ~reverbBus, \mix, 0.33, \room, 0.7]);
+Synth(\tap, [\out, ~reverbBus, \atk, 0.001, \rel, 0.5, \freq, 600]);
+
+(
+p = Pspawn(
+	Pbind(
+		\pattern, Pfunc{
+			Pbind( \instrument, \tap,
+				\dur, Pwhite(0.05,0.8,8),
+				\freq, Pexprand(400,800,inf),
+				\atk, 0.004,
+				\rel, Pwhite(0.25,0.5),
+				\amp, Pwhite(0.5,1),
+				\pan, Pwhite(-0.8,0.8),
+				\out, ~reverbBus,
+			);
+		},
+		\delta, Pwhite(8,10, inf),
+		\method, \par,
+	)
+)
+)
