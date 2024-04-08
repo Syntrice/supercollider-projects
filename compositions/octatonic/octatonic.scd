@@ -1,3 +1,5 @@
+// todo: more SynthDefs (percussion), (triangle, piano etc)
+
 // Server Setup
 (
 o = Server.default.options;
@@ -87,7 +89,97 @@ SynthDef(\strings, {
 Scale.all.put(\octatonic, Scale(#[0, 1, 3, 4, 6, 7, 9, 10]));
 Scale.at(\octatonic);
 
-//\degree, Pseq([Pseries(0,1,7),Pseries(7,-1,7)],inf),
+(
+~triads = [
+	#[0,2,5],
+	#[0,3,5],
+	#[2,4,7],
+	#[2,5,7],
+	#[4,6,9],
+	#[4,7,9],
+	#[6,8,11],
+	#[6,9,11]
+];
+)
+
+(
+~dom_sevenths = [
+	#[1,3,5,6],
+	#[3,5,7,8],
+	#[5,7,9,10],
+	#[7,9,11,12],
+];
+)
+
+(
+~data = Pbind(
+	\type, \rest,
+	\dur, 8,
+	\chord, Pseq([Pxrand(~triads,1),Pxrand(~dom_sevenths,1)],inf),
+).collect({ |ev| ~data_ev = ev;});
+)
+
+x = ~data.asStream;
+x.next(());
+
+~data_ev;
+
+(
+Pbindef(\pattern1_a,
+	\instrument, \sine,
+	\dur, 0.25,
+	\degree, Pfunc({~data_ev[\chord].}),
+	\scale, Scale.at(\octatonic),
+	\atk, 0.05,
+	\rel, 0.25,
+	\legato, 0.2,
+	\vib_rate, 0,
+	\pan, Pwhite(-0.8,0.8,inf),
+).play;
+)
+
+(
+Pbindef(\pattern1_a,
+	\instrument, \sine,
+	\dur, 0.25,
+	\degree, { var i = 0-1; loop({i = i + 1; ~data_ev[\chord][i % 3].yield;})}.p,
+	\scale, Scale.at(\octatonic),
+	\atk, 0.05,
+	\rel, 0.25,
+	\legato, 0.2,
+	\vib_rate, 0,
+	\pan, Pwhite(-0.8,0.8,inf),
+).play;
+)
+
+(
+Pbindef(\pattern1_b,
+	\instrument, \sine,
+	\dur, 0.25,
+	\degree, Pxrand(~dom_sevenths.collect { |row| Pxrand(row, 1)},inf ),
+	\scale, Scale.at(\octatonic),
+	\atk, 0.005,
+	\rel, 0.5,
+	\legato, 0.2,
+	\vib_rate, 0,
+	\pan, Pwhite(-0.8,0.8,inf),
+).play;
+)
+
+(
+Pbindef(\pattern1_b,
+	\instrument, \sine,
+	\dur, 0.125,
+	\degree, Pdup(4,Pxrand(~dom_sevenths,inf)),
+	\scale, Scale.at(\octatonic),
+	\atk, 0.005,
+	\rel, 0.5,
+	\ctranspose, Pdup(16, Pwhite(-8,4,inf)),
+	\legato, 0.2,
+	\vib_rate, 0,
+	\pan, Pwhite(-0.8,0.8,inf),
+).play;
+)
 
 (
 Pbindef(\pattern1_a,
