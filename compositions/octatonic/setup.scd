@@ -5,7 +5,6 @@ o.device = "ASIO : Focusrite USB ASIO";
 Server.default.reboot;"D:/Development/Supercollider/wind_modeling.scd"
 )
 
-
 (
 SynthDef(\sine, {
 	var send, ampEnv, temp, gen;

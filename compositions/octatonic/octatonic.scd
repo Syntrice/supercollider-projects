@@ -7,152 +7,291 @@ Scale.at(\octatonic);
 	#[0,3,5],
 	#[2,4,7],
 	#[2,5,7],
-	#[4,6,9],
-	#[4,7,9],
-	#[6,8,11],
-	#[6,9,11]
+	#[4,6,1],
+	#[4,7,1],
+	#[6,0,3],
+	#[6,1,3],
 ];
-)
 
-(
+
 ~dom_sevenths = [
 	#[1,3,5,6],
-	#[3,5,7,8],
-	#[5,7,9,10],
-	#[7,9,11,12],
+	#[3,5,7,0],
+	#[5,7,1,2],
+	#[7,1,3,4],
+];
+
+~dim_7th = [
+	#[0,2,4,6],
+	#[1,3,5,7],
+];
+
+~half_dim_7th = [
+	#[1,2,4,6],
+	#[3,4,6,0],
+	#[5,6,0,2],
+	#[7,0,2,4],
+];
+
+~minor_7ths = [
+	#[1,3,4,6],
+	#[3,5,6,0],
+	#[5,7,0,2],
+	#[7,1,2,4],
 ];
 )
 
 (
-~data = Pbind(
-	\type, \rest,
-	\dur, 8,
-	\chord, Pseq([Pxrand(~triads,1),Pxrand(~dom_sevenths,1)],inf),
-).collect({ |ev| ~data_ev = ev;});
-)
-
-x = ~data.asStream;
-x.next(());
-
-~data_ev;
-
-(
-Pbindef(\pattern1_a,
-	\instrument, \sine,
-	\dur, 0.25,
-	\degree, Pfunc({~data_ev[\chord]}),
-	\scale, Scale.at(\octatonic),
-	\atk, 0.05,
-	\rel, 0.25,
-	\legato, 0.2,
-	\vib_rate, 0,
-	\pan, Pwhite(-0.8,0.8,inf),
-).play;
+~tempo = 60;
+~signiture = 4;
+t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
 )
 
 (
-Pbindef(\pattern1_a,
-	\instrument, \sine,
-	\dur, 0.25,
-	\degree, { var i = 0-1; loop({i = i + 1; ~data_ev[\chord][i % 3].yield;})}.p,
-	\scale, Scale.at(\octatonic),
-	\atk, 0.05,
-	\rel, 0.25,
-	\legato, 0.2,
-	\vib_rate, 0,
-	\pan, Pwhite(-0.8,0.8,inf),
-).play;
+Pdef(\data,
+	Pbind(
+		\type, \rest,
+		\dur, Pxrand([4,8],inf),
+		\t, Pstep(Pxrand([-2,-1,0,1,2],inf),32),
+		\chord, Pseq([Pseq([Pxrand(~minor_7ths,1),Pxrand(~dom_sevenths,1)],2),Pxrand(~dim_7th)],inf),
+	).collect({ |ev| ~data_ev = ev;}
+	);
+)
 )
 
-(
-Pbindef(\pattern1_b,
-	\instrument, \sine,
-	\dur, 0.25,
-	\degree, Pxrand(~dom_sevenths.collect { |row| Pxrand(row, 1)},inf ),
-	\scale, Scale.at(\octatonic),
-	\atk, 0.005,
-	\rel, 0.5,
-	\legato, 0.2,
-	\vib_rate, 0,
-	\pan, Pwhite(-0.8,0.8,inf),
-).play;
-)
+Pdef(\data).play(t, quant: [4,0,0.05]);
+
+~data_ev[\t]
 
 (
-Pbindef(\pattern1_b,
-	\instrument, \sine,
-	\dur, 0.125,
-	\degree, Pdup(4,Pxrand(~dom_sevenths,inf)),
-	\scale, Scale.at(\octatonic),
-	\atk, 0.005,
-	\rel, 0.5,
-	\ctranspose, Pdup(16, Pwhite(-8,4,inf)),
-	\legato, 0.2,
-	\vib_rate, 0,
-	\pan, Pwhite(-0.8,0.8,inf),
-).play;
-)
+Pdef(\pattern2,
+	Pbind(
+		\instrument, \strings,
+		\dur, 2,
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current -8;
+					current.yield;
+				});
+			});
 
-// Patterns
-
-(
-Pbindef(\pattern1_a,
-	\instrument, \sine,
-	\dur, Prand([0.25,0.5,0.75,1],inf),
-	\degree, 0,
-	\scale, Scale.at(\octatonic),
-	\atk, 0.005,
-	\rel, 0.5,
-	\legato, 0.2,
-	\vib_rate, 0,
-	\pan, Pwhite(-0.8,0.8,inf),
-).play;
-)
-
-(
-Pbindef(\pattern1_b, *Pbindef(\pattern1_a).source.pairs.deepCopy);
-Pbindef(\pattern1_b, \degree, 5);
-Pbindef(\pattern1_b).play;
-)
-
-(
-Pbindef(\pattern1_c, *Pbindef(\pattern1_a).source.pairs.deepCopy);
-Pbindef(\pattern1_c, \degree, -7);
-Pbindef(\pattern1_c).play;
-)
-
-(
-Pbindef(\pattern1_d, *Pbindef(\pattern1_a).source.pairs.deepCopy);
-Pbindef(\pattern1_d, \degree, -3);
-Pbindef(\pattern1_d).play;
-)
-
-(
-Pbindef(\pattern1_a, \degree, Prand([0,2],inf));
-Pbindef(\pattern1_b, \degree, Prand([5,6],inf));
-Pbindef(\pattern1_c, \degree, Prand([-7,-6],inf));
-Pbindef(\pattern1_d, \degree, Prand([-3,-2],inf));
-)
-
-(
-Pbindef(\pattern2_a,
-	\instrument, \strings,
-	\dur, Pseq([4,Pwhite(4,7,inf)],inf),
-	\scale, Scale.at(\octatonic),
-	\degree, Pseq([Pwhite(8,16,1),Rest()], inf),
-	\atk, 2,
-	\rel, 2,
-	\legato, 1,
-	\dtune, 0.01,
-	\pan, Pwhite(-0.8,0.8,inf),
-	\cutoff, 2000,
+		}.p,
+		\scale, Scale.at(\octatonic),
+	);
 );
 )
 
-Pbindef(\pattern2_a).play;
+(
+Pdef(\pattern3,
+	Pbind(
+		\instrument, \strings,
+		\dur, 3/2,
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current +8;
+					current.yield;
+				});
+			});
+
+		}.p,
+		\scale, Scale.at(\octatonic),
+	);
+);
+)
+
+Pdef(\data).play(t, quant: [4,0,0.05]);
 
 (
-Pbindef(\pattern2_b, *Pbindef(\pattern2_a).source.pairs.deepCopy);
-Pbindef(\pattern2_b, \ctranspose, -3);
-Pbindef(\pattern2_b).play;
+Pdef(\pattern,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pwhite(1,4,inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current;
+					current.yield;
+				});
+			});
+
+		}.p,
+		\scale, Scale.at(\octatonic),
+		\amp, 0.5,
+	);
+);
 )
+
+Pdef(\pattern).play(t, quant:4);
+
+(
+Pdef(\pattern2,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pxrand([0.25,0.5,0.75],inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current + 8;
+					current.yield;
+				});
+			});
+
+		}.p,
+		\scale, Scale.at(\octatonic),
+		\atk, 0.005,
+		\rel, 0.5,
+		\legato, 0.25,
+		\amp, Pwhite(0.1,0.3,inf),
+		\pan, Pwhite(-0.8,0.8,inf),
+	);
+);
+)
+
+
+Pdef(\pattern2).play(t, quant:4);
+
+(
+Pdef(\pattern,
+	Pbind(
+		\instrument, \sine,
+		\dur, 0.25,
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, Pfunc({~data_ev[\chord]}),
+		\scale, Scale.at(\octatonic),
+		\amp, 0.1,
+		\atk, 0.005,
+		\rel, 0.5,
+	);
+);
+)
+
+(
+Pdef(\data,
+	Pbind(
+		\type, \rest,
+		\dur, 4,
+		\t, Pstep(Pxrand([-2,-1,0,1,2],inf),32),
+		\chord, Pseq([Pseq([Pxrand(~minor_7ths,1),Pxrand(~dom_sevenths,1)],2),Pxrand(~dim_7th)],inf),
+	).collect({ |ev| ~data_ev = ev;}
+	);
+)
+)
+
+(
+Pdef(\pattern,
+	Pbind(
+		\instrument, \sine,
+		\dur, Pwrand([0.25,0.125],[30,5].normalizeSum,inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, Pfunc({~data_ev[\chord]}),
+		\scale, Scale.at(\octatonic),
+		\amp, 0.1,
+		\atk, 0.005,
+		\rel, 0.5,
+	);
+);
+)
+
+(
+Pdef(\pattern3,
+	Pbind(
+		\instrument, \strings,
+		\dur, Pwhite(4,7,inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current - 8;
+					current.yield;
+				});
+			});
+
+		}.p,
+		\scale, Scale.at(\octatonic),
+		\amp, 0.1,
+		\atk, 0.5,
+		\rel, 0.3,
+		\legato, 1,
+		\cutoff, 3000,
+		\pan, -0.9
+	);
+);
+)
+
+(
+Pdef(\pattern3b,
+	Pbind(
+		\instrument, \strings,
+		\dur, Pwhite(4,7,inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, {
+			var previous = 0;
+			var current;
+			loop({
+				current = ~data_ev[\chord].choose;
+				if(current != previous, {
+					previous = current;
+					current = current - 8;
+					current.yield;
+				});
+			});
+
+		}.p,
+		\scale, Scale.at(\octatonic),
+		\amp, 0.1,
+		\atk, 0.5,
+		\rel, 0.3,
+		\legato, 1,
+		\cutoff, 3000,
+		\pan, 0.8,
+	);
+);
+)
+
+(
+Pdef(\pattern4,
+	Pbind(
+		\instrument, \strings,
+		\dur, Pwhite(4,7,inf),
+		\ctranspose, Pfunc({~data_ev[\t]}),
+		\degree, Pfunc({~data_ev[\chord][0]-16}),
+		\scale, Scale.at(\octatonic),
+		\amp, 0.1,
+		\atk, 0.5,
+		\rel, 0.3,
+		\legato, 1,
+		\cutoff, 3000,
+		\pan, 0.8,
+	);
+);
+)
+
+Pdef(\pattern3).play(t, quant:4);
+Pdef(\pattern3b).play(t, quant:4);
+Pdef(\pattern4).play(t, quant:4);
