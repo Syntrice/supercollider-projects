@@ -49,10 +49,21 @@ SynthDef(\sine, {
 	// Signal
 	freq = \freq.kr(440);
 	send = 0;
+
 	4.do({
 		arg i;
 		temp = SinOsc.ar(
 			freq *
+			LFNoise2.kr(1,\dtune.kr(0.01),1) //*
+			//LFTri.kr(LFNoise2.kr(4,0.5,\vib_rate.kr(4)),0.0,\vib_mag.kr(0.01),1)
+		);
+		send = send + temp;
+	});
+
+	4.do({
+		arg i;
+		temp = SinOsc.ar(
+			freq * 2 *
 			LFNoise2.kr(1,\dtune.kr(0.01),1) //*
 			//LFTri.kr(LFNoise2.kr(4,0.5,\vib_rate.kr(4)),0.0,\vib_mag.kr(0.01),1)
 		);
@@ -80,28 +91,62 @@ SynthDef(\sine, {
 )
 
 (
+SynthDef(\tap, {
+	var snd, env, temp, freq;
+
+	snd = WhiteNoise.ar();
+
+	freq = \freq.kr(3000);
+
+	snd = BPF.ar(snd,freq, 40/freq, 10);
+	//snd = BPF.ar(snd, freq, 40/freq, 10);
+
+	env = Env.perc(0.01, 0.25).ar(gate: \gate.kr(1));
+
+
+	snd = snd * env * \amp.kr(1) * 4.dbamp;
+
+	snd = CombC.ar(snd, 0.01, XLine.kr(0.0001, 0.01, 20), 0.2);
+
+	snd = Pan2.ar(snd,\pan.kr(0));
+
+	//snd = snd + (DelayC.ar(snd, 0.02, 0.02, 1) * 0.5);
+
+	FreeSelf.kr(TDelay.kr(Done.kr(env),0.1));
+
+
+	Out.ar(\out.kr(0), snd);
+};
+).add;
+)
+
+Synth(\tap);
+
+
+(
 SynthDef(\strings, {
-	var send, ampEnv, temp, gen;
+	var send, ampEnv, temp, gen, freq;
 
-	// create ADSR envelope
-	ampEnv = Env.adsr(
-			\atk.ir(3),
-			\dec.ir(3),
-			\sus.ir(0.8),
-			\rel.ir(5),
-			\peak.ir(1)
-	).ar(Done.freeSelf, \gate.kr(1));
-
-	// create signal generators
+	// Signal
+	freq = \freq.kr(440);
 	send = 0;
 	4.do({
 		arg i;
-		temp = LFSaw.ar(\freq.kr(440) *
+		temp = LFSaw.ar(freq *
 			LFNoise2.ar(1,\dtune.kr(0.01),1) //*
 			//LFTri.kr(LFNoise2.kr(4,0.5,\vib_rate.kr(4)),0.0,\vib_mag.kr(0.01),1)
 		);
 		send = send + temp;
 	});
+
+	// create ADSR envelope
+	ampEnv = Env.adsr(
+			\atk.ir(0.01),
+			\dec.ir(0.3),
+			\sus.ir(0.5),
+			\rel.ir(0.5),
+			\peak.ir(1)
+	).ar(Done.freeSelf, \gate.kr(1));
 
 	// Amplitude
 	send = send * ampEnv * -12.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
@@ -110,7 +155,7 @@ SynthDef(\strings, {
 	send = Pan2.ar(send, \pan.kr(0));
 
 	// Filter
-	send = LPF.ar(send, \cutoff.kr(4000));
+	send = LPF.ar(send, \cutoff.kr(2000));
 
 	// output
 	Out.ar(\out.kr(0), send);

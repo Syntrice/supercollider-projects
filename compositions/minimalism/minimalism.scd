@@ -21,21 +21,26 @@ Pdef(\p1,
 		\dur, 1/2,
 		\scale, Pstep(~scale, ~signiture * 4,inf),
 		\degree, Pseq([0,2,1,4,3,6,5],inf),
+		\amp, 0.2,
 	);
 );
 )
 
 (
-Pdef(\p2,
+Pdef(\p22,
 	Pbind(
 		\instrument, \sine,
 		\dur, 1/4,
 		\scale, Pstep(~scale,~signiture * 4,inf),
 		\degree, Pxrand([0,2,1,4,3,6,5],inf),
-		\octave, 7,
+		\octave, 6,
+		\amp, 0.2,
 	);
 );
 )
+
+Pdef(\p22).play(t, quant: 3.5);
+
 
 (
 Pdef(\p3,
@@ -53,19 +58,53 @@ Pdef(\p3,
 )
 
 (
+Pdef(\perc,
+	Pbind(
+		\instrument, \tap,
+		\dur, Pseq([1,1,1.5,1,1,0.5],inf),
+		\freq, 3000,
+		\amp, Pseq([0.2,0.2,0.5],inf),
+	);
+)
+)
+
+(
+Pdef(\perc2,
+	Pbind(
+		\instrument, \tap,
+		\dur, Pseq([0.5,0.5,1.5,1.5,1,2],inf),
+		\freq, 1000,
+		\amp, Pseq([0.1,0.1,0.2],inf),
+	);
+)
+)
+
+Pdef(\p1).play(t, quant: 3.5);
+Pdef(\p22).play(t, quant: 3.5);
+Pdef(\p3).play(t, quant: 3.5);
+Pdef(\perc).play(t, quant: 3.5);
+Pdef(\perc2).play(t, quant: 3.5);
+
+(
 r = Routine({
+	Pdef(\perc).play(t, quant: 3.5);
+	(3.5 * 2).wait;
+	Pdef(\perc2).play(t, quant: 3.5);
+	(3.5 * 2).wait;
 	Pdef(\p1).play(t, quant: 3.5);
 	(3.5 * 4 * 4).wait;
-	Pdef(\p2).play(t, quant: 3.5);
+	Pdef(\p22).play(t, quant: 3.5);
 	(3.5 * 4 * 4).wait;
 	Pdef(\p3).play(t, quant: 3.5);
 	});
 )
 
+r.play(t);
+>
 (
 Pdef(\p2,
 	Pbind(
-		\instrument, \sine,
+		\instrument, \tap,
 		\dur, 1/4,
 		\scale, Pstep(~scale,~signiture * 4,inf),
 		\degree, Pxrand([[0,2],[1,4],[3,6,5]],inf),
@@ -74,8 +113,10 @@ Pdef(\p2,
 );
 )
 
+Pdef(\p2).play;
+
 (
-Pdef(\p2,
+Pdef(\p22,
 	Pbind(
 		\instrument, \sine,
 		\dur, 1/4,

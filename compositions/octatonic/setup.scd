@@ -75,7 +75,7 @@ SynthDef(\strings, {
 	send = Splay.ar(send);
 
 	// filter signal
-	send = LPF.ar(send, \cutoff.kr(4000));
+	send = LPF.ar(send, \cutoff.kr(2000));
 
 	// output
 	Out.ar(\out.kr(0), send);
