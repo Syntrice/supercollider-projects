@@ -168,9 +168,9 @@ SynthDef(\strings, {
 
 MIDIdef.noteOn(\noteOnTest, {
 	arg vel, nn, chan, src;
-	[vel, nn].postln;
+	[vel, nn, (nn - 60)].postln;
 	~notes[nn] = Synth.new(
-		\sine,
+		\strings,
 		[
 			\freq, nn.midicps,
 			\amp, vel.linexp(1,127,0.1,1),

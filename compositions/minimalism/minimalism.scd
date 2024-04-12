@@ -1,3 +1,134 @@
+/**
+
+Yet to be named minimalism composition is a work which is based upon the three octatonic collections,
+and the chords which can be made up of the collection. The work incoporates a Markov chain which determines the chord to play next based on probability.
+
+Currently, there is a customizable chance that a chord will progress onto a chord in the same octatonic progression, or move by dominant motion to a chord in an adjacent collection.
+
+Currently, future ideas including more Markov controlled parameters, more specific voicing of chords, or experimenting with neo-riemannian theory further.
+
+For example, another set of states could be used for rhythmic identity, or chord voicing, or arpeggitaion. Or any other possibility really.
+
+**/
+
+
+// Dictionary of all the chords used in the piece
+(
+~chords = Dictionary[
+	\A -> [0,4,7,11], //C
+	\A1 -> [0,3,7,10], //C
+	\B -> [3,7,10,14], //D#
+	\B1 -> [3,6,10,13], //D#
+	\C -> [6,10,13,17], //F#
+	\C1 -> [6,9,13,16], //F#
+	\D -> [9,13,16,20], // A
+	\D1 -> [9,12,16,19], // A
+
+	\E -> [1,5,8,12], // C#
+	\E1 -> [1,4,8,11], // C#
+	\F -> [4,8,11,15], // E
+	\F1 -> [4,7,11,14], // E
+	\G -> [7,11,14,18], // G
+	\G1 -> [7,10,14,17], // G
+	\H -> [10,14,17,21], // A#
+	\H1 -> [10,13,17,20], // A#
+
+	\I -> [2,6,9,13], // D
+	\I1 -> [2,5,9,12], // D
+	\J -> [5,9,12,16], // F
+	\J1 -> [5,8,12,15], // F
+	\K -> [8,12,15,19], // G#
+	\K1 -> [8,11,15,18], // G#
+	\L -> [11,15,18,22], // B
+	\L1 -> [11,14,18,21], // B
+];
+)
+
+(
+// A Markov setup to determine probability of moving between octatonic collections
+
+// Weights to use [stay in octatonic, move to Dominant]
+~weights = [50,50].normalizeSum;
+
+m = MarkovSet([
+	[\A, [\B, \G], ~weights],
+	[\B, [\C, \H], ~weights],
+	[\C, [\D, \E], ~weights],
+	[\D, [\A, \F], ~weights],
+
+	[\E, [\F, \K], ~weights],
+	[\F, [\G, \L], ~weights],
+	[\G, [\H, \I], ~weights],
+	[\H, [\E, \J], ~weights],
+
+	[\I, [\J, \D], ~weights],
+	[\J, [\K, \A], ~weights],
+	[\K, [\L, \B], ~weights],
+	[\L, [\I, \C], ~weights],
+]);
+)
+
+// Setup a data Pdef that will iterate through the markov chain to set chords
+(
+~state = \A.postln;
+
+Pdef(\data, Pbind(
+	\type, \rest,
+	\dur, 8,
+	\scale, Pfunc({
+		~state = m.next(~state);
+
+		// Chose either the major or minor chord - doesn't affect Markov chain
+		("State: " ++ ~state).postln;
+
+		[~chords[(~state ++ \1).asSymbol],~chords[~state]].choose.postln;
+	});
+).collect({ |ev| ~data_ev = ev;}));
+)
+
+// Composition Patterns
+(
+Pdef(\a,
+	Pbind(
+		\instrument, \sine,
+		\dur, 2,
+		\scale, Pfunc({~data_ev[\scale]}),
+		\degree, [-4,0,1,2,3],
+		\amp, 0.2,
+		\pan, Pseq([-0.8,0.8],inf);
+	);
+);
+)
+
+(
+Pdef(\b,
+	Pbind(
+		\instrument, \strings,
+		\dur, Pseq([1/2, 1/2, 1/2, 1/2, 1, 1, 1/2, 1],inf),
+		\scale, Pfunc({~data_ev[\scale]}),
+		\degree, -8,
+		\amp, 0.4,
+		\pan, 0,
+	);
+);
+)
+
+(
+Pdef(\c,
+	Pbind(
+		\instrument, \sine,
+		\dur, 2,
+		\scale, Pfunc({~data_ev[\scale]}),
+		\degree, Pwrand([Pseq([1,0,4,2,3,0],1),Pseq([1,0,4,2,3,0,5],1)],[10,5].normalizeSum,inf),
+		\amp, 0.2,
+		\mtranspose, 4,
+		\pan, Pseq([-0.8,0.8],inf);
+	);
+);
+)
+
+// Test the composition
+
 (
 ~tempo = 120;
 ~signiture = 3.5;
@@ -5,137 +136,9 @@ t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~sign
 )
 
 (
-~scale = [
-	#[-8,-3, 0, 2, 4, 7, 14],
-	#[-7,-4, 1, 2, 5, 7, 13],
-	#[-9,-5, -1, 3, 4, 6, 12],
-	#[-7,-3, 2, 7, 8, 12, 14],
-	//#[-9,-2, 3, 4, 6, 10, 13],
-]
+~state = \A;
+Pdef(\data).play(t, quant: [4,0,0.05]);
+Pdef(\a).play(t, quant: 4);
+Pdef(\b).play(t, quant: 4);
+Pdef(\c).play(t, quant: 4);
 )
-
-(
-Pdef(\p1,
-	Pbind(
-		\instrument, \sine,
-		\dur, 1/2,
-		\scale, Pstep(~scale, ~signiture * 4,inf),
-		\degree, Pseq([0,2,1,4,3,6,5],inf),
-		\amp, 0.2,
-	);
-);
-)
-
-(
-Pdef(\p22,
-	Pbind(
-		\instrument, \sine,
-		\dur, 1/4,
-		\scale, Pstep(~scale,~signiture * 4,inf),
-		\degree, Pxrand([0,2,1,4,3,6,5],inf),
-		\octave, 6,
-		\amp, 0.2,
-	);
-);
-)
-
-Pdef(\p22).play(t, quant: 3.5);
-
-
-(
-Pdef(\p3,
-	Pbind(
-		\instrument, \strings,
-		\dur, 1/2,
-		\scale, Pstep(~scale,~signiture * 4,inf),
-		\degree, Pwrand([0,1,-1],[10,1,1].normalizeSum, inf),
-		\amp, Pwrand([0.1,0.25],[5,1].normalizeSum,inf),
-		\pan, Pseg([-1,1,-1],~signiture * 4,'lin',inf),
-		\octave, 5,
-
-	);
-);
-)
-
-(
-Pdef(\perc,
-	Pbind(
-		\instrument, \tap,
-		\dur, Pseq([1,1,1.5,1,1,0.5],inf),
-		\freq, 3000,
-		\amp, Pseq([0.2,0.2,0.5],inf),
-	);
-)
-)
-
-(
-Pdef(\perc2,
-	Pbind(
-		\instrument, \tap,
-		\dur, Pseq([0.5,0.5,1.5,1.5,1,2],inf),
-		\freq, 1000,
-		\amp, Pseq([0.1,0.1,0.2],inf),
-	);
-)
-)
-
-Pdef(\p1).play(t, quant: 3.5);
-Pdef(\p22).play(t, quant: 3.5);
-Pdef(\p3).play(t, quant: 3.5);
-Pdef(\perc).play(t, quant: 3.5);
-Pdef(\perc2).play(t, quant: 3.5);
-
-(
-r = Routine({
-	Pdef(\perc).play(t, quant: 3.5);
-	(3.5 * 2).wait;
-	Pdef(\perc2).play(t, quant: 3.5);
-	(3.5 * 2).wait;
-	Pdef(\p1).play(t, quant: 3.5);
-	(3.5 * 4 * 4).wait;
-	Pdef(\p22).play(t, quant: 3.5);
-	(3.5 * 4 * 4).wait;
-	Pdef(\p3).play(t, quant: 3.5);
-	});
-)
-
-r.play(t);
->
-(
-Pdef(\p2,
-	Pbind(
-		\instrument, \tap,
-		\dur, 1/4,
-		\scale, Pstep(~scale,~signiture * 4,inf),
-		\degree, Pxrand([[0,2],[1,4],[3,6,5]],inf),
-		\octave, 7,
-	);
-);
-)
-
-Pdef(\p2).play;
-
-(
-Pdef(\p22,
-	Pbind(
-		\instrument, \sine,
-		\dur, 1/4,
-		\scale, Pstep(~scale,~signiture * 4,inf),
-		\degree, [1,4,3],
-		\octave, 7,
-	);
-);
-)
-
-(
-Pdef(\p1,
-	Pbind(
-		\instrument, \sine,
-		\dur, 1,
-		\scale, Pstep(~scale, ~signiture * 4,inf),
-		\degree, Pseq([0,2,1,4,3,6,5],inf),
-	);
-);
-)
-
-r.play(t);
