@@ -17,30 +17,61 @@ For example, another set of states could be used for rhythmic identity, or chord
 ~chords = Dictionary[
 	\C -> [0,4,7,11], //C
 	\Cm -> [0,3,7,10], //C
-	\Ds -> [3,7,10,14], //D#
-	\Dsm -> [3,6,10,13], //D#
-	\Fs -> [6,10,13,17], //F#
-	\Fsm -> [6,9,13,16], //F#
-	\A -> [9,13,16,20], // A
-	\Am -> [9,12,16,19], // A
+	\Ds -> [2,3,7,10], //D#
+	\Dsm -> [1,3,6,10], //D#
+	\Fs -> [5,6,10,13], //F#
+	\Fsm -> [4,6,9,13], //F#
+	\A -> [4,8,9,13], // A
+	\Am -> [4,9,7,12], // A
 
-	\Cs -> [1,5,8,12], // C#
+	\Cs -> [0,1,5,8], // C#
 	\Csm -> [1,4,8,11], // C#
-	\E -> [4,8,11,15], // E
-	\Em -> [4,7,11,14], // E
-	\G -> [7,11,14,18], // G
-	\Gm -> [7,10,14,17], // G
-	\As -> [10,14,17,21], // A#
-	\Asm -> [10,13,17,20], // A#
+	\E -> [3,4,8,11], // E
+	\Em -> [2,4,7,11], // E
+	\G -> [2,6,7,11], // G
+	\Gm -> [2,5,7,10], // G
+	\As -> [2,5,9,10], // A#
+	\Asm -> [1,5,8,10], // A#
 
-	\D -> [2,6,9,13], // D
-	\Dm -> [2,5,9,12], // D
-	\F -> [5,9,12,16], // F
-	\Fm -> [5,8,12,15], // F
-	\Gs -> [8,12,15,19], // G#
-	\Gsm -> [8,11,15,18], // G#
-	\B -> [11,15,18,22], // B
-	\Bm -> [11,14,18,21], // B
+	\D -> [1,2,6,9], // D
+	\Dm -> [0,2,5,9], // D
+	\F -> [0,4,5,9], // F
+	\Fm -> [0,3,5,8], // F
+	\Gs -> [0,3,7,8], // G#
+	\Gsm -> [3,6,8,11], // G#
+	\B -> [3,6,10,11], // B
+	\Bm -> [2,6,9,11], // B
+];
+)
+
+(
+~roots = Dictionary[
+	\C -> 0, //C
+	\Cm -> 0, //C
+	\Ds -> 1, //D#
+	\Dsm -> 1, //D#
+	\Fs -> 1, //F#
+	\Fsm -> 1, //F#
+	\A -> 2, // A
+	\Am -> 1, // A
+
+	\Cs -> 1, // C#
+	\Csm -> 0, // C#
+	\E -> 1, // E
+	\Em -> 1, // E
+	\G -> 2, // G
+	\Gm -> 2, // G
+	\As -> 3, // A#
+	\Asm -> 3, // A#
+
+	\D -> 1, // D
+	\Dm -> 1, // D
+	\F -> 2, // F
+	\Fm -> 2, // F
+	\Gs -> 3, // G#
+	\Gsm -> 2, // G#
+	\B -> 3, // B
+	\Bm -> 3, // B
 ];
 )
 
@@ -103,7 +134,6 @@ m = MarkovSet([
 (
 ~state = \C.postln;
 
-
 Pdef(\data, Pbind(
 	\type, \rest,
 	\dur, 8,
@@ -112,66 +142,64 @@ Pdef(\data, Pbind(
 
 		// Chose either the major or minor chord - doesn't affect Markov chain
 		("State: " ++ ~state).postln;
+		("PCS: " ++ ~chords[~state]).postln;
 
-		~chords[~state].postln;
+		~chords[~state];
+	}),
+	\bass, Pfunc({
+		~roots[~state];
 	});
 ).collect({ |ev| ~data_ev = ev;}));
 )
 
-// Composition Patterns
 (
-Pdef(\a,
-	Pbind(
-		\instrument, \sine,
-		\dur, Pbjorklund2(5,7),
-		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, [-4,0,1,2,3],
-		\amp, 0.2,
-		\pan, Pseq([-0.8,0.8],inf);
-	);
+Pbindef(\m,
+	\instrument, \perc,
+	\dur, 1,
+	\freq, Pseq([2000,1000,1000,1000],inf),
+	\amp, Pseq([0.2,0.1,0.1,0.1],inf),
+	\legato, 0.1,
+);
+
+
+
+Pbindef(\r1,
+	\instrument, \perc,
+	\dur, Pbjorklund2(5,8),
+	\freq, 500,
+	\rel, 0.1,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+);
+
+
+
+Pbindef(\r2,
+	\instrument, \perc,
+	\dur, Pbjorklund2(5,8,inf,1),
+	\freq, 800,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+);
+
+
+
+Pbindef(\r3,
+	\instrument, \perc,
+	\dur, Pbjorklund2(5,8,inf,2),
+	\freq, 1500,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+);
+
+Pbindef(\r4,
+	\instrument, \perc,
+	\dur, Pbjorklund2(5,8,inf,3) / 2,
+	\freq, 2500,
+	\out, ~bus_reverb,
+	\legato, 0.1,
 );
 )
-
-(
-Pdef(\b,
-	Pbind(
-		\instrument, \strings,
-		\dur, Pbjorklund2(5,7,inf,1),
-		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, -8,
-		\amp, 0.4,
-		\pan, 0,
-	);
-);
-)
-
-(
-Pdef(\c,
-	Pbind(
-		\instrument, \sine,
-		\dur, Pbjorklund2(5,7) / 4,
-		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, Pwrand([Pseq([1,0,4,2,3,0],1),Pseq([1,0,4,2,3,0,5],1)],[10,5].normalizeSum,inf),
-		\amp, 0.2,
-		\mtranspose, 4,
-		\pan, Pseq([-0.8,0.8],inf);
-	);
-);
-)
-
-(
-Pdef(\metronome,
-	Pbind(
-		\instrument, \tap,
-		\dur, 1,
-		\freq, Pseq([440*3,440*2,440*2,440*2],inf),
-		\amp, Pseq([0.2,0.05,0.05,0.05],inf),
-	);
-);
-)
-
-
-// Test the composition
 
 (
 ~tempo = 120;
@@ -179,11 +207,110 @@ Pdef(\metronome,
 t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
 )
 
+// Start
 
-~state = \A;
+Pdef(\r1).play(t, quant: 8);
+Pdef(\r2).play(t, quant: 8);
+Pdef(\r3).play(t, quant: 8);
+Pdef(\r4).play(t, quant: 8);
 
-Pdef(\metronome).play(t,quant: 4);
-Pdef(\data).play(t, quant: [4,0,0.05]);
-Pdef(\a).play(t, quant: 4);
-Pdef(\b).play(t, quant: 4);
-Pdef(\c).play(t, quant: 4);
+
+(
+Pbindef(\b11,
+	\instrument, \saw,
+	\dur, Pbjorklund2(5,8,inf,3) / 4,
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pfunc({~data_ev[\bass]}),
+	\ctranspose, -12
+)
+)
+
+(
+Pdef(\data).play(t, quant: [8,0,0.05]);
+Pdef(\b11).play(t, quant: 8);
+)
+
+// wait 4 bars
+
+(
+Pbindef(\p11,
+	\instrument, \sine,
+	\dur, Pbjorklund2(5,8,inf,4) / 4,
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pseq([0,2,1,3,2,4,3],inf),
+	\ctranspose, 0
+)
+)
+
+Pdef(\p11).play(t, quant: 8);
+
+// wait 4 bars
+
+(
+Pbindef(\b22,
+	\instrument, \saw,
+	\dur, Pseq([6,Rest(2)],inf),
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pfunc({~data_ev[\bass]}),
+	\ctranspose, -24,
+	\atk, 1,
+	\rel, 1,
+	\amp, 0.2,
+)
+)
+
+Pdef(\b22).play(t, quant: 8);
+
+// wait 4 bars
+
+(
+Pbindef(\p22,
+	\instrument, \sine,
+	\dur, Pbjorklund2(5,8,inf,5) / 8,
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pxrand([0,2,1,3,2,4,3],inf),
+	\ctranspose, 12
+)
+)
+
+Pdef(\p22).play(t, quant: 8);
+
+// Wait 8 bars or so
+
+(
+Pbindef(\p33,
+	\instrument, \saw,
+	\dur, Pseq([Rest(4),4],inf),
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pfunc({~data_ev[\bass]}),
+	\ctranspose, 12,
+	\atk, 1,
+	\rel, 1,
+	\amp, 0.2,
+)
+)
+
+Pdef(\p33).play(t, quant: 8);
+
+// Change of rhythm
+
+Pbindef(\p11, \dur, Pbjorklund2(5,8,inf,4) / 2);
+Pbindef(\r1, \dur, Pbjorklund2(5,8,inf,4));
+Pbindef(\r2, \dur, Pbjorklund2(5,8,inf,4));
+Pbindef(\r3, \dur, Pbjorklund2(5,8,inf,4));
+Pbindef(\r4, \dur, Pbjorklund2(5,8,inf,4));
+Pbindef(\p22, \degree, Pseq([[0,3],[1,4],[0,1],[2,3]],inf));
+Pbindef(\b11, \dur, Pbjorklund2(5,8,inf,4));
+
+Pbindef(\p11, \dur, 2, \degree, Pseq([[0,1],[1,2],[2,3]],inf), \atk, 0.5, \rel, 0.5);
+
+Pbindef(\p22, \dur, 2, \atk, 0.5, \rel, 0.5);
+
+Pbindef(\b11, \dur, 1, \atk, 0.5, \rel, 0.5);
+
+// Gradually stop
+Pbindef(\r1).stop;
+Pbindef(\r2).stop;
+Pbindef(\r3).stop;
+Pbindef(\r4).stop;
+

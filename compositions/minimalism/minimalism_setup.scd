@@ -175,7 +175,7 @@ SynthDef(\perc, {
 	snd = LPF.ar(snd, freq);
 
 	// Envelope
-	env = Env.perc(0.01, 0.25).ar(gate: \gate.kr(1));
+	env = Env.perc(0.01, 0.25).ar(Done.freeSelf, gate: \gate.kr(1));
 
 	// Amplitude
 	snd = snd * env * \amp.kr(1) * -1.5.dbamp;
@@ -187,7 +187,7 @@ SynthDef(\perc, {
 	snd = Pan2.ar(snd,\pan.kr(0));
 
 	// Free synth
-	FreeSelf.kr(TDelay.kr(Done.kr(env),2));
+	//FreeSelf.kr(TDelay.kr(Done.kr(env),1));
 
 	// Output
 	Out.ar(\out.kr(~bus_master), snd);
@@ -195,6 +195,8 @@ SynthDef(\perc, {
 ).add;
 )
 )
+
+Synth(\perc, [\out, ~bus_reverb]);
 
 
 // MIDI Input (for testing)
@@ -205,11 +207,14 @@ MIDIdef.noteOn(\noteOnTest, {
 	arg vel, nn, chan, src;
 	[vel, nn, (nn - 60)].postln;
 	~notes[nn] = Synth.new(
-		\perc,
+		\saw,
 		[
 			\freq, nn.midicps,
 			\amp, vel.linexp(1,127,0.1,1),
 			\gate, 1,
+			\atk, 0.5,
+			\rel, 0.5,
+			\sus, 0.8,
 			\out, ~bus_reverb,
 		]
 	);
