@@ -15,73 +15,105 @@ For example, another set of states could be used for rhythmic identity, or chord
 // Dictionary of all the chords used in the piece
 (
 ~chords = Dictionary[
-	\A -> [0,4,7,11], //C
-	\A1 -> [0,3,7,10], //C
-	\B -> [3,7,10,14], //D#
-	\B1 -> [3,6,10,13], //D#
-	\C -> [6,10,13,17], //F#
-	\C1 -> [6,9,13,16], //F#
-	\D -> [9,13,16,20], // A
-	\D1 -> [9,12,16,19], // A
+	\C -> [0,4,7,11], //C
+	\Cm -> [0,3,7,10], //C
+	\Ds -> [3,7,10,14], //D#
+	\Dsm -> [3,6,10,13], //D#
+	\Fs -> [6,10,13,17], //F#
+	\Fsm -> [6,9,13,16], //F#
+	\A -> [9,13,16,20], // A
+	\Am -> [9,12,16,19], // A
 
-	\E -> [1,5,8,12], // C#
-	\E1 -> [1,4,8,11], // C#
-	\F -> [4,8,11,15], // E
-	\F1 -> [4,7,11,14], // E
+	\Cs -> [1,5,8,12], // C#
+	\Csm -> [1,4,8,11], // C#
+	\E -> [4,8,11,15], // E
+	\Em -> [4,7,11,14], // E
 	\G -> [7,11,14,18], // G
-	\G1 -> [7,10,14,17], // G
-	\H -> [10,14,17,21], // A#
-	\H1 -> [10,13,17,20], // A#
+	\Gm -> [7,10,14,17], // G
+	\As -> [10,14,17,21], // A#
+	\Asm -> [10,13,17,20], // A#
 
-	\I -> [2,6,9,13], // D
-	\I1 -> [2,5,9,12], // D
-	\J -> [5,9,12,16], // F
-	\J1 -> [5,8,12,15], // F
-	\K -> [8,12,15,19], // G#
-	\K1 -> [8,11,15,18], // G#
-	\L -> [11,15,18,22], // B
-	\L1 -> [11,14,18,21], // B
+	\D -> [2,6,9,13], // D
+	\Dm -> [2,5,9,12], // D
+	\F -> [5,9,12,16], // F
+	\Fm -> [5,8,12,15], // F
+	\Gs -> [8,12,15,19], // G#
+	\Gsm -> [8,11,15,18], // G#
+	\B -> [11,15,18,22], // B
+	\Bm -> [11,14,18,21], // B
 ];
 )
 
 (
 // A Markov setup to determine probability of moving between octatonic collections
 
-// Weights to use [stay in octatonic, move to Dominant]
-~weights = [50,50].normalizeSum;
+~weights = [
+	70, // hexatonic forward major
+	70, // hexatonic forward minor
+	20, // hexatonic backward major
+	20, // hexatonic backward minor
+	50, // dominant major
+	50, // dominant minor
+	25, // subdominant major
+	25, // subdominant minor
+	30  // parallel
+].normalizeSum;
 
 m = MarkovSet([
-	[\A, [\B, \G], ~weights],
-	[\B, [\C, \H], ~weights],
-	[\C, [\D, \E], ~weights],
-	[\D, [\A, \F], ~weights],
+	[\C, [\Ds, \Dsm, \A, \Am, \G, \Gm, \F, \Fm, \Cm], ~weights],
+	[\Cm, [\Ds, \Dsm, \A, \Am, \G, \Gm, \F, \Fm, \C], ~weights],
 
-	[\E, [\F, \K], ~weights],
-	[\F, [\G, \L], ~weights],
-	[\G, [\H, \I], ~weights],
-	[\H, [\E, \J], ~weights],
+	[\Ds, [\Fs, \Fsm, \C, \Cm, \A, \Am, \Gs, \Gsm, \Dsm], ~weights],
+	[\Dsm, [\Fs, \Fsm, \C, \Cm, \A, \Am, \Gs, \Gsm, \Ds], ~weights],
 
-	[\I, [\J, \D], ~weights],
-	[\J, [\K, \A], ~weights],
-	[\K, [\L, \B], ~weights],
-	[\L, [\I, \C], ~weights],
+	[\Fs, [\A, \Am, \Ds, \Dsm, \Cs, \Csm, \B, \Bm, \Fsm], ~weights],
+	[\Fsm, [\A, \Am, \Ds, \Dsm, \Cs, \Csm, \B, \Bm, \Fs], ~weights],
+
+	[\A, [\C, \Cm, \Fs, \Fsm, \E, \Em, \D, \Dm, \Am], ~weights],
+	[\Am, [\C, \Cm, \Fs, \Fsm, \E, \Em, \D, \Dm, \A], ~weights],
+
+	[\Cs, [\E, \Em, \As, \Asm, \Gs, \Gsm, \Fs, \Fsm, \Csm], ~weights],
+	[\Csm, [\E, \Em, \As, \Asm, \Gs, \Gsm, \Fs, \Fsm, \Cs], ~weights],
+
+	[\E, [\G, \Gm, \Cs, \Csm, \B, \Bm, \A, \Am, \Em], ~weights],
+	[\Em, [\G, \Gm, \Cs, \Csm, \B, \Bm, \A, \Am, \E], ~weights],
+
+	[\G, [\As, \Asm, \E, \Em, \D, \Dm, \C, \Cm, \Gm], ~weights],
+	[\Gm, [\As, \Asm, \E, \Em, \D, \Dm, \C, \Cm, \G], ~weights],
+
+	[\As, [\Cs, \Csm, \As, \Asm, \F, \Fm, \Ds, \Dsm, \Asm], ~weights],
+	[\Asm, [\Cs, \Csm, \As, \Asm, \F, \Fm, \Ds, \Dsm, \As], ~weights],
+
+	[\D, [\F, \Fm, \B, \Bm, \A, \Am, \G, \Gm, \Dm], ~weights],
+	[\Dm, [\F, \Fm, \B, \Bm, \A, \Am, \G, \Gm, \D], ~weights],
+
+	[\F, [\Gs, \Gsm, \D, \Dm, \C, \Cm, \As, \Asm, \Fm], ~weights],
+	[\Fm, [\Gs, \Gsm, \D, \Dm, \C, \Cm, \As, \Asm, \F], ~weights],
+
+	[\Gs, [\B, \Bm, \F, \Fm, \Ds, \Dsm, \Cs, \Csm, \Gsm], ~weights],
+	[\Gsm, [\B, \Bm, \F, \Fm, \Ds, \Dsm, \Cs, \Csm, \Gs], ~weights],
+
+	[\B, [\D, \Dm, \Gs, \Gsm, \Fs, \Fsm, \E, \Em, \Bm], ~weights],
+	[\Bm, [\D, \Dm, \Gs, \Gsm, \Fs, \Fsm, \E, \Em, \B], ~weights],
 ]);
 )
 
+
 // Setup a data Pdef that will iterate through the markov chain to set chords
 (
-~state = \A.postln;
+~state = \C.postln;
+
 
 Pdef(\data, Pbind(
 	\type, \rest,
-	\dur, Pbjorklund2(3,16),
+	\dur, 8,
 	\scale, Pfunc({
 		~state = m.next(~state);
 
 		// Chose either the major or minor chord - doesn't affect Markov chain
 		("State: " ++ ~state).postln;
 
-		[~chords[(~state ++ \1).asSymbol],~chords[~state]].choose.postln;
+		~chords[~state].postln;
 	});
 ).collect({ |ev| ~data_ev = ev;}));
 )
