@@ -74,7 +74,7 @@ m = MarkovSet([
 
 Pdef(\data, Pbind(
 	\type, \rest,
-	\dur, 8,
+	\dur, Pbjorklund2(3,16),
 	\scale, Pfunc({
 		~state = m.next(~state);
 
@@ -91,7 +91,7 @@ Pdef(\data, Pbind(
 Pdef(\a,
 	Pbind(
 		\instrument, \sine,
-		\dur, 2,
+		\dur, Pbjorklund2(5,7),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, [-4,0,1,2,3],
 		\amp, 0.2,
@@ -104,7 +104,7 @@ Pdef(\a,
 Pdef(\b,
 	Pbind(
 		\instrument, \strings,
-		\dur, Pseq([1/2, 1/2, 1/2, 1/2, 1, 1, 1/2, 1],inf),
+		\dur, Pbjorklund2(5,7,inf,1),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, -8,
 		\amp, 0.4,
@@ -117,7 +117,7 @@ Pdef(\b,
 Pdef(\c,
 	Pbind(
 		\instrument, \sine,
-		\dur, 2,
+		\dur, Pbjorklund2(5,7) / 4,
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pwrand([Pseq([1,0,4,2,3,0],1),Pseq([1,0,4,2,3,0,5],1)],[10,5].normalizeSum,inf),
 		\amp, 0.2,
@@ -127,18 +127,31 @@ Pdef(\c,
 );
 )
 
+(
+Pdef(\metronome,
+	Pbind(
+		\instrument, \tap,
+		\dur, 1,
+		\freq, Pseq([440*3,440*2,440*2,440*2],inf),
+		\amp, Pseq([0.2,0.05,0.05,0.05],inf),
+	);
+);
+)
+
+
 // Test the composition
 
 (
 ~tempo = 120;
-~signiture = 3.5;
+~signiture = 4;
 t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
 )
 
-(
+
 ~state = \A;
+
+Pdef(\metronome).play(t,quant: 4);
 Pdef(\data).play(t, quant: [4,0,0.05]);
 Pdef(\a).play(t, quant: 4);
 Pdef(\b).play(t, quant: 4);
 Pdef(\c).play(t, quant: 4);
-)

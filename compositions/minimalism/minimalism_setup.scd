@@ -99,7 +99,7 @@ SynthDef(\tap, {
 	freq = \freq.kr(3000);
 
 	snd = BPF.ar(snd,freq, 40/freq, 10);
-	//snd = BPF.ar(snd, freq, 40/freq, 10);
+	snd = LPF.ar(snd, freq * 1.5);
 
 	env = Env.perc(0.01, 0.25).ar(gate: \gate.kr(1));
 
@@ -112,7 +112,7 @@ SynthDef(\tap, {
 
 	//snd = snd + (DelayC.ar(snd, 0.02, 0.02, 1) * 0.5);
 
-	FreeSelf.kr(TDelay.kr(Done.kr(env),0.1));
+	FreeSelf.kr(TDelay.kr(Done.kr(env),2));
 
 
 	Out.ar(\out.kr(0), snd);
