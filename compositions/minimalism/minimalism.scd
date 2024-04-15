@@ -153,132 +153,187 @@ Pdef(\data, Pbind(
 )
 
 (
-Pbindef(\m,
+~tempo = 120;
+~signiture = 8;
+t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+
+r = Routine({
+
+	Pbindef(\r1,
 	\instrument, \perc,
-	\dur, 1,
-	\freq, Pseq([2000,1000,1000,1000],inf),
-	\amp, Pseq([0.2,0.1,0.1,0.1],inf),
-	\legato, 0.1,
-);
-
-
-
-Pbindef(\r1,
-	\instrument, \perc,
-	\dur, Pbjorklund2(5,8),
+	\dur, Pwhite(1,3,inf),
 	\freq, 500,
 	\rel, 0.1,
 	\out, ~bus_reverb,
 	\legato, 0.1,
-);
+	).play(t, quant: 8);
+
+	16.wait;
+
+	Pbindef(\r2,
+	\instrument, \perc,
+	\dur, Pwhite(0.5,2,inf).round(0.5),
+	\freq, 1000,
+	\rel, 0.1,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+	).play(t, quant: 8);
+
+	16.wait;
+
+	Pbindef(\r3,
+	\instrument, \perc,
+	\dur, Pwhite(0.5,1,inf).round(0.5),
+	\freq, 1500,
+	\rel, 0.1,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+	).play(t, quant: 8);
 
 
+});
+)
 
+(
+Pbindef(\r1,
+	\instrument, \perc,
+	\dur, Pwhite(1,3,inf),
+	\freq, 500,
+	\rel, 0.1,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+	).play(t, quant: 8);
+)
+
+// wait 2 bars
+
+(
 Pbindef(\r2,
 	\instrument, \perc,
-	\dur, Pbjorklund2(5,8,inf,1),
-	\freq, 800,
+	\dur, Pwhite(0.5,2,inf).round(0.5),
+	\freq, 1000,
+	\rel, 0.1,
 	\out, ~bus_reverb,
 	\legato, 0.1,
-);
+	).play(t, quant: 8);
+)
 
+// wait 2 bars
 
-
+(
 Pbindef(\r3,
 	\instrument, \perc,
-	\dur, Pbjorklund2(5,8,inf,2),
+	\dur, Pwhite(0.5,1,inf).round(0.5),
 	\freq, 1500,
+	\rel, 0.1,
 	\out, ~bus_reverb,
 	\legato, 0.1,
-);
-
-Pbindef(\r4,
-	\instrument, \perc,
-	\dur, Pbjorklund2(5,8,inf,3) / 2,
-	\freq, 2500,
-	\out, ~bus_reverb,
-	\legato, 0.1,
-);
+	).play(t, quant: 8);
 )
+
+// wait 2 bars
 
 (
-~tempo = 120;
-~signiture = 4;
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+t.playNextBar({
+	Pbindef(\r1, \dur, Pbjorklund2(5,8,inf,0));
+	Pbindef(\r2, \dur, Pbjorklund2(5,8,inf,1));
+	Pbindef(\r3, \dur, Pbjorklund2(5,8,inf,2) /2);
+};
+);
 )
 
-// Start
-
-Pdef(\r1).play(t, quant: 8);
-Pdef(\r2).play(t, quant: 8);
-Pdef(\r3).play(t, quant: 8);
-Pdef(\r4).play(t, quant: 8);
-
-
-(
-Pbindef(\b11,
-	\instrument, \saw,
-	\dur, Pbjorklund2(5,8,inf,3) / 4,
-	\scale, Pfunc({~data_ev[\scale]}),
-	\degree, Pfunc({~data_ev[\bass]}),
-	\ctranspose, -12
-)
-)
+// wait 2
 
 (
 Pdef(\data).play(t, quant: [8,0,0.05]);
-Pdef(\b11).play(t, quant: 8);
-)
-
-// wait 4 bars
-
-(
-Pbindef(\p11,
-	\instrument, \sine,
-	\dur, Pbjorklund2(5,8,inf,4) / 4,
-	\scale, Pfunc({~data_ev[\scale]}),
-	\degree, Pseq([0,2,1,3,2,4,3],inf),
-	\ctranspose, 0
-)
-)
-
-Pdef(\p11).play(t, quant: 8);
-
-// wait 4 bars
-
-(
-Pbindef(\b22,
+Pbindef(\bass1,
 	\instrument, \saw,
-	\dur, Pseq([6,Rest(2)],inf),
+	\dur, Pseq([5.5,2.5],inf),
 	\scale, Pfunc({~data_ev[\scale]}),
 	\degree, Pfunc({~data_ev[\bass]}),
 	\ctranspose, -24,
+	\rel, 0.5,
+).play(t, quant: 8)
+)
+
+// wait 6
+
+(
+Pbindef(\melody1,
+	\instrument, \sine,
+	\dur, Pbjorklund2(7,12,inf,1),
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pseq([0,2,1,3,2,4,2],inf),
+).play(t, quant: 8)
+)
+
+// wait 4
+
+Pbindef(\melody1, \dur, Pbjorklund2(8,12,inf,1));
+
+(
+Pbindef(\r4,
+	\instrument, \perc,
+	\dur, Pbjorklund2(5,8,inf,4),
+	\freq, 200,
+	\rel, 0.5,
+	\amp, 0.3,
+	\out, ~bus_reverb,
+	\legato, 0.1,
+	).play(t, quant: 8);
+)
+
+// wait 4
+
+Pbindef(\melody1, \dur, Pbjorklund2(9,11,inf,1));
+
+// wait 4
+
+(
+Pbindef(\melody2,
+	\instrument, \sine,
+	\dur, Pseq([1/2,1/2,1/2,1/2,1/2,1/2,1/2,Rest(1/2)],inf),
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pseq([0,1,2,3,2,1,4],inf),
+	\ctranpose, 12,
+).play(t, quant: 8)
+)
+
+// wait 4
+
+(
+Pbindef(\r5,
+	\instrument, \perc,
+	\dur, 1/2,
+	\freq, 2000,
+	\rel, 0.5,
+	\band_width, 1000,
+	\amp, Pseq([0.4,0.2],inf),
+	\out, ~bus_reverb,
+	\legato, 0.1,
+	).play(t, quant: 8);
+)
+
+// wait 4
+Pbindef(\melody2, \dur, Pseq([1/4,1/4,1/4,1/4,1/4,1/4,1/4,Rest(1/2)],inf))
+
+// wait 4
+
+(
+Pbindef(\bass2,
+	\instrument, \saw,
+	\dur, Pseq([Rest(2),6],inf),
+	\scale, Pfunc({~data_ev[\scale]}),
+	\degree, Pfunc({~data_ev[\bass]}),
+	\ctranspose, -12,
 	\atk, 1,
 	\rel, 1,
-	\amp, 0.2,
+	\amp, 0.1,
+).play(t, quant: 8);
 )
-)
-
-Pdef(\b22).play(t, quant: 8);
-
-// wait 4 bars
 
 (
-Pbindef(\p22,
-	\instrument, \sine,
-	\dur, Pbjorklund2(5,8,inf,5) / 8,
-	\scale, Pfunc({~data_ev[\scale]}),
-	\degree, Pxrand([0,2,1,3,2,4,3],inf),
-	\ctranspose, 12
-)
-)
-
-Pdef(\p22).play(t, quant: 8);
-
-// Wait 8 bars or so
-
-(
-Pbindef(\p33,
+Pbindef(\bass3,
 	\instrument, \saw,
 	\dur, Pseq([Rest(4),4],inf),
 	\scale, Pfunc({~data_ev[\scale]}),
@@ -286,31 +341,23 @@ Pbindef(\p33,
 	\ctranspose, 12,
 	\atk, 1,
 	\rel, 1,
-	\amp, 0.2,
+	\amp, 0.3,
+).play(t, quant: 8);
 )
-)
 
-Pdef(\p33).play(t, quant: 8);
+// wait 4
 
-// Change of rhythm
-
-Pbindef(\p11, \dur, Pbjorklund2(5,8,inf,4) / 2);
-Pbindef(\r1, \dur, Pbjorklund2(5,8,inf,4));
-Pbindef(\r2, \dur, Pbjorklund2(5,8,inf,4));
-Pbindef(\r3, \dur, Pbjorklund2(5,8,inf,4));
-Pbindef(\r4, \dur, Pbjorklund2(5,8,inf,4));
-Pbindef(\p22, \degree, Pseq([[0,3],[1,4],[0,1],[2,3]],inf));
-Pbindef(\b11, \dur, Pbjorklund2(5,8,inf,4));
-
-Pbindef(\p11, \dur, 2, \degree, Pseq([[0,1],[1,2],[2,3]],inf), \atk, 0.5, \rel, 0.5);
-
-Pbindef(\p22, \dur, 2, \atk, 0.5, \rel, 0.5);
-
-Pbindef(\b11, \dur, 1, \atk, 0.5, \rel, 0.5);
-
-// Gradually stop
+// Percussion stop
+Pbindef(\melody2, \dur, Pseq([1/2,1/2,1/2,1/2,1/2,1/2,1/2,Rest(1/2)],inf));
 Pbindef(\r1).stop;
 Pbindef(\r2).stop;
 Pbindef(\r3).stop;
 Pbindef(\r4).stop;
+
+// wait 4
+Pbindef(\r5).stop;
+Pbindef(\bass1).stop;
+Pbindef(\bass2).stop;
+Pbindef(\bass3).stop;
+Pbindef(\melody1).stop;
 
