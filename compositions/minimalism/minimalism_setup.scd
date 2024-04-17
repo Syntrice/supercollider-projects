@@ -178,7 +178,7 @@ SynthDef(\perc, {
 	env = Env.perc(0.01, 0.25).ar(Done.freeSelf, gate: \gate.kr(1));
 
 	// Amplitude
-	snd = snd * env * \amp.kr(1) * -1.5.dbamp;
+	snd = snd * env * \amp.kr(1) * 0.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 	// Delay
 	//snd = CombC.ar(snd, 0.01, XLine.kr(0.0001, 0.01, 20), 0.2);
