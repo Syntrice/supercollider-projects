@@ -2,8 +2,8 @@
 (
 o = Server.default.options;
 o.device = "ASIO : Focusrite USB ASIO";
-//o.hardwareBufferSize = 1024;
-//s.latency = 0.3;
+o.hardwareBufferSize = 1024;
+s.latency = 0.3;
 s.options.numAudioBusChannels = 128;
 s.options.numOutputBusChannels = 9; // 8 plus subwoofer
 s.options.numInputBusChannels = 2;
@@ -17,11 +17,11 @@ Routine {
 
 	~stereo_mixdown = true; // toggle to enable a stereo mixdown
 	~numChannels = 8; // number of mixing channels
-	~numLFE = 1; // number of LFE channels
-
-	~mixer.free; ~mixer = Group(s, \addToTail);
 
 	// --- Channels ---
+
+	// group for all mixing related synths
+	~mixer.free; ~mixer = Group(s, \addToTail);
 
 	// Master
 	SynthDef(\master, {
@@ -29,19 +29,29 @@ Routine {
 		var snd;
 		var l, r, c, lfe, ls, rs, bsl, bsr, bc;
 
-		snd = In.ar(in, ~numChannels + ~numLFE);
+		// plus 1 extra for LFE
+		snd = In.ar(in, ~numChannels + 1);
 
 		#c, r, rs, bsr, bc, bsl, ls, l, lfe = snd;
 
 
+		// Low pass on LFE channel
+		lfe = LPF.ar(lfe,120);
+
+
 		if (~stereo_mixdown) {
+
+			// produce a stereo-mixdown
 			l = Mix([c * 0.707, l * 1, ls * 0.707, bsl * 0.707, bc * 0.707]);
 			r = Mix([c * 0.707, r * 1, rs * 0.707, bsr * 0.707, bc * 0.707]);
 			snd = [l,r];
+
 		} {
+
 			// Reorder output to match speaker arrangement
 			snd = [l, r, c, lfe, ls, rs, bsl, bsr, bc];
 		};
+
 
 		// Limiter
 		snd = Limiter.ar(snd, -3.dbamp);
@@ -60,15 +70,18 @@ Routine {
 		arg in;
 		var snd, input, leak;
 
-		input = In.ar(in, 8);
-		snd = Array(8);
+		input = In.ar(in, 9);
+		snd = Array(9);
 
-		leak = input.sum * 0.05;
+		leak = input.sum * 0.01;
 
 		~numChannels.do { |i|
 			snd.add(FreeVerb.ar(input[i],0.66,0.8));
 			snd[i] = snd[i] + FreeVerb.ar(leak,1,0.8);
 		};
+
+		// lfe reverb
+		snd.add(FreeVerb.ar(input[8],0.66,0.8));
 
 		Out.ar(~bus_master, snd);
 	}
@@ -79,42 +92,47 @@ Routine {
 	~bus_reverb.free; ~bus_reverb = Bus.audio(s, 8);
 	~channel_reverb.free; ~channel_reverb = Synth(\reverb, [\in, ~bus_reverb], ~mixer);
 
+
 	// --- Synths ---
 
 	// Noise engine
 	SynthDef.new(\noise_engine) {
-		var noise, partials, band_width, freq, temp, amp_env, send, dtune;
+		var noise, partials, band_width, freq, temp, amp_env, send, dtune, pamp, pdrift, pan, output;
 
 		// Generate noise signal
 		noise = WhiteNoise.ar();
 
 		send = 0;
 
-		// Number of partials including fundamental
-		partials = 8;
+		pamp = \pamp.kr(3);
+		pdrift = \pdrift.kr(1.01);
+		pan = \pan.kr(0);
 		band_width = \band_width.kr(5);
 		freq = \freq.kr(440);
 		dtune = \dtune.kr(0.01);
 
+		// Number of partials including fundamental
+		partials = 8;
+
 		partials.do{ | i |
-			var f, bw;
+			var f;
 			i = i + 1;
 
 			// detune partial frequency
 			f = freq * i * LFNoise2.kr(1,dtune,1.00);
 
-			// randomize partial band_width TODO:
-			bw = band_width;
 
 			// first band pass
 			//temp = BPF.ar(noise, f, bw / f, 100 * bw.reciprocal);
-			temp = BPF.ar(noise, f, bw / f);
+			temp = BPF.ar(noise, f, band_width / f);
 
 			// second band pass
-			temp = BPF.ar(temp, f, bw / f);
+			temp = BPF.ar(temp, f, band_width / f);
 
 			// higher partials have a lower amplitude
-			temp = temp * 1 / (i**3);
+			temp = temp * (1 / (i**pamp));
+
+			//temp = PanAz.ar(~numChannels, temp, pan * LFNoise2.kr(1,pdrift,1.00), orientation: 0);
 
 			send = send + temp;
 		};
@@ -131,15 +149,83 @@ Routine {
 		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
-		send = PanAz.ar(~numChannels, send, \pan.kr(0), orientation: 0);
+		output = PanAz.ar(~numChannels, send, \pan.kr(0), orientation: 0);
+
+		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
+			send * \subamp.kr(0)
+		];
 
 		// Output
-		Out.ar(\out.kr(~bus_master), send)
+		Out.ar(\out.kr(~bus_master), output)
+	}.add;
+
+	// Noise engine
+	SynthDef.new(\impulse) {
+		var noise, partials, band_width, freq, temp, amp_env, send, dtune, pamp, pdrift, pan, output;
+
+		// Generate noise signal
+		noise = WhiteNoise.ar();
+
+		send = 0;
+
+		pamp = \pamp.kr(3);
+		pdrift = \pdrift.kr(1.01);
+		pan = \pan.kr(0);
+		band_width = \band_width.kr(5);
+		freq = \freq.kr(440);
+		dtune = \dtune.kr(0.01);
+
+		// Number of partials including fundamental
+		partials = 24;
+
+		partials.do{ | i |
+			var f;
+			i = i + 1;
+
+			// detune partial frequency
+			f = freq * i * LFNoise2.kr(1,dtune,1.00);
+
+
+			// first band pass
+			//temp = BPF.ar(noise, f, bw / f, 100 * bw.reciprocal);
+			temp = BPF.ar(noise, f, band_width / f);
+
+			// second band pass
+			temp = BPF.ar(temp, f, band_width / f);
+
+			// higher partials have a lower amplitude
+			temp = temp * (1 / (i**pamp));
+
+			//temp = PanAz.ar(~numChannels, temp, pan * LFNoise2.kr(1,pdrift,1.00), orientation: 0);
+
+			send = send + temp;
+		};
+
+		// Amplitude Envelope
+		amp_env = Env.adsr(
+			\atk.ir(0.5),
+			\dec.ir(0.3),
+			\sus.ir(0.5),
+			\rel.ir(0.5),
+		).ar(Done.freeSelf, \gate.kr(1));
+
+		// Amp signal
+		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+
+		// Pan signal
+		output = PanAz.ar(~numChannels, send, \pan.kr(0), orientation: 0);
+
+		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
+			send * \subamp.kr(0)
+		];
+
+		// Output
+		Out.ar(\out.kr(~bus_master), output)
 	}.add;
 
 	// Percussion
 	SynthDef(\perc, {
-		var snd, env, temp, freq, band_width;
+		var snd, env, temp, freq, band_width, output;
 
 		// Signal
 		snd = WhiteNoise.ar();
@@ -152,25 +238,28 @@ Routine {
 		snd = LPF.ar(snd, freq);
 
 		// Envelope
-		env = Env.perc(0.01, 0.25).ar(Done.freeSelf, gate: \gate.kr(1));
+		env = Env.perc(\atk.ir(0.01), \rel.ir(0.25)).ar(Done.freeSelf, gate: \gate.kr(1));
 
 		// Amplitude
-		snd = snd * env * \amp.kr(1) * 0.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		snd = snd * env * \amp.kr(1) * 6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Delay
 		//snd = CombC.ar(snd, 0.01, XLine.kr(0.0001, 0.01, 20), 0.2);
 
 
 		// Pan signal
-		snd = PanAz.ar(~numChannels, snd, \pan.kr(0), orientation: 0);
+		output = PanAz.ar(~numChannels, snd, \pan.kr(0), orientation: 0);
 
-		// Free synth
-		//FreeSelf.kr(TDelay.kr(Done.kr(env),1));
+		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
+			snd * \subamp.kr(0)
+		];
 
 		// Output
-		Out.ar(\out.kr(~bus_reverb), snd);
+		Out.ar(\out.kr(~bus_reverb), output);
 	};
 	).add;
+
+
 
 	// --- Functions ---
 
@@ -333,40 +422,39 @@ Routine {
 	~t = Array.newClear(128);
 
 	// chord to use
-	~chord = [0,4,9];
+	~chord = [1,4,8];
 	~order = -1;
-	~orbit = true;
+	~orbit = false;
 
 	MIDIdef.noteOn(\noteOnTest, {
 		arg vel, nn, chan, src;
-		[vel, nn, chan].postln;
+		[vel, nn, chan, nn.midicps].postln;
 		~notes[nn] = Synth.new(
-			\noise_engine,
+			\perc,
 			[
 				\freq, (nn).midicps,
 				\amp, vel.linexp(1,127,0.01,0.3),
 				\gate, 1,
 				//\cutoff, 2000,
-				\band_width, 50,
-				//\atk, 1,
-				\rel, 2,
-				\pan,
+				\band_width, 5,
+				\pamp, 3,
+				\atk, 3,
+				\rel, 3,
 				\pan, [0,0.25,0.5,0.75,1.00,1.25,1.5,1.75].choose;
 
 			],
 		);
 		~t[nn] = Synth.new(
-			\noise_engine,
+			\perc,
 			[
-				//\freq, (~t_pitch.((nn - 60), ~chord, ~order, 12) + 60).midicps,
-				\freq, (nn).midicps,
+				\freq, (~t_pitch.((nn - 60), ~chord, ~order, 12) + 60).midicps,
 				\amp, vel.linexp(1,127,0.01,0.3),
 				\gate, 1,
 				//\cutoff, 2000,
-				\band_width, 50,
-				//\atk, 1,
-				\rel, 2,
-				\pan, 0,
+				\band_width, 5,
+				\pamp, 3,
+				\atk, 3,
+				\rel, 3,
 				\pan, [0,0.25,0.5,0.75,1.00,1.25,1.5,1.75].choose;
 			],
 		);
