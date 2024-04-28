@@ -316,7 +316,7 @@ Routine {
 			parameter.set(\val, env.at(i));
 			i = i + (clock.tempo / control_rate);
 
-			env.at(i).postln;
+			//env.at(i).postln;
 			if(i < duration) {clock.tempo / (control_rate)} {
 				parameter.set(\val, env.at(env.totalDuration)); \done.postln;
 			};
