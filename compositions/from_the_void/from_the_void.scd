@@ -3,7 +3,7 @@
 ~tempo = 56;
 ~signiture = 4;
 ~stereoOut = true;
-~record = false;
+~record = true;
 
 "from_the_void_setup.scd".loadRelative;
 )
@@ -23,24 +23,18 @@
 
 .add(\noise_mid_start -> {
 
-	Ndef(\noise_band_width, {\val.kr(200)});
-	Ndef(\tapping_band_width, {\val.kr(200)});
-	Ndef(\crackles_band_width, {\val.kr(200)});
-	Ndef(\melody_amp, {\val.kr(0.2)});
-
 	Pbindef(\noise_mid,
 		\instrument, \noise_engine,
 		\freq, Pexprand(320,660,inf),
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pwhite(3,5,inf),
 		\pan, Pwhite(0.0,2.0,inf),
-		\amp, Pwhite(0.02,0.1),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.60,0.85)}),
 		\atk, 8, \dec, 0, \sus, 1, \rel, 8,
 		\out, ~bus_master,
 	).play(t, quant: 1);
 
 	\noise_mid_start.postln;
-
 })
 
 .add(\rumble_start -> {
@@ -51,8 +45,8 @@
 		\band_width, 40, // has a fair bit of ressonance
 		\dur, Pwhite(8,13,inf), // rumbles slightly less often than mid noise
 		\pan, Pwhite(0.0,2.0,inf), // non-LFE component pans across stereo field
-		\amp, Pwhite(0.02,0.1), // quiet volume for now
-		\subamp, Pkey(\amp),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.40,0.60)}), // quiet volume for now
+		\subamp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.80,1.00)}),
 		\atk, 4, \dec, 0, \sus, 1, \rel, 4, // quite slow attack and release
 		\legato, 0.5,
 		\out, ~bus_master,
@@ -72,8 +66,8 @@
 				\dur, Pwhite(0.15,0.7,rrand(4,6)),
 				\freq, exprand(880,1760),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\tapping_band_width),
-				\amp, Pwhite(0.05,0.1),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -93,8 +87,8 @@
 				\dur, Pwhite(0.2,0.9,rrand(3,5)),
 				\freq, exprand(138,277),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\tapping_band_width),
-				\amp, Pwhite(0.05,0.1),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -115,7 +109,7 @@
 		\pan, Pwhite(0.0,2.0,inf),
 		\atk, 2,
 		\rel, 8,
-		\amp, Pfunc({Ndef(\melody_amp).get(\val)}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 1.2}),
 		\pamp, 2,
 		\band_width, 10,
 		\legato, 0.1,
@@ -136,7 +130,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pwhite(3,5,inf),
 		\pan, Pwhite(0.0,2.0,inf),
-		\amp, Pwhite(0.02,0.1),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.60,0.85)}),
 		\atk, 8, \dec, 0, \sus, 1, \rel, 8,
 		\out, ~bus_master,
 	).play(t, quant: 1);
@@ -154,10 +148,10 @@
 				\dur, Pwhite(0.1,0.3,rrand(18,24)),
 				\freq, exprand(3000,5000),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
+				\band_width, 200,
 				\atk, 0.005,
 				\rel, 0.05,
-				\amp, Pwhite(0.05,0.1),
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -178,10 +172,10 @@
 				\dur, Pwhite(0.15,0.45,rrand(18,24)),
 				\freq, exprand(1900,2900),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
+				\band_width, 200,
 				\atk, 0.005,
 				\rel, 0.05,
-				\amp, Pwhite(0.05,0.1),
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -202,8 +196,8 @@
 				\dur, Pwhite(0.1,0.5,rrand(6,8)),
 				\freq, exprand(880,1760),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\tapping_band_width),
-				\amp, Pwhite(0.05,0.1),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -231,8 +225,8 @@
 				\dur, Pwhite(0.15,0.7,rrand(6,8)),
 				\freq, exprand(138,277),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\tapping_band_width),
-				\amp, Pwhite(0.05,0.1),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -254,7 +248,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, 4,
 		\pan, Pfunc({~e_melody_lower[\pan]+1}), // random pan across octophonic field
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.7}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val)}),
 		\atk, 1, // slow attack,
 		\dec, 0, // no decay
 		\sus, 1,
@@ -275,8 +269,8 @@
 				\dur, Pwhite(0.05,0.25,rrand(18,24)),
 				\freq, exprand(3000,5000),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
-				\amp, Pwhite(0.05,0.09),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\atk, 0.005,
 				\rel, 0.05,
 				\legato, 0.1,
@@ -300,8 +294,8 @@
 				\dur, Pwhite(0.1,0.35,rrand(18,24)),
 				\freq, exprand(1900,2900),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
-				\amp, Pwhite(0.05,0.09),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\atk, 0.005,
 				\rel, 0.05,
 				\legato, 0.1,
@@ -323,7 +317,7 @@
 		\dur, Pwhite(0.25, 0.5,inf),
 		\pan, Pbrown(0.0,8.0,0.25,inf),
 		\legato, 0.1,
-		\amp, Pwhite(0.03,0.07),
+		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 		\band_width, 20,
 		\out, ~bus_reverb,
 	).play(t, quant: 1);
@@ -338,9 +332,9 @@
 		\order, Pseq([-1,-1,1,1],inf),
 		\midinote, Pfunc({ |ev| ~t_pitch.(~melody[1][~e_melody_lower[\melody_index]] -60, [1,4,8],ev[\order],12)+60}),
 		\band_width, Ndef(\noise_band_width),
-		\dur, 4,
+		\dur, Pseq([Rest(2),Pn(4,inf)],inf),
 		\pan, Pfunc({~e_melody_lower[\pan] - 0.5}),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.6}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.85}),
 		\atk, 1,
 		\dec, 0,
 		\sus, 1,
@@ -361,7 +355,7 @@
 		\dur, Pwhite(0.25, 0.5,inf),
 		\pan, Pbrown(0.0,8.0,0.25,inf),
 		\legato, 0.1,
-		\amp, Pwhite(0.03,0.07),
+		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 		\band_width, Ndef(\noise_band_width),
 		\out, ~bus_reverb,
 	).play(t, quant: 1);
@@ -372,6 +366,7 @@
 .add(\crackling_hi_increase_density2 -> {
 
 	~crackles_hi.stop;
+
 	~crackles_hi = Pspawn(Pbind(
 		\pattern, Pfunc {
 			Pbind(
@@ -379,8 +374,8 @@
 				\dur, Pwhite(0.05,0.15,rrand(20,36)),
 				\freq, exprand(3000,5000),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
-				\amp, Pwhite(0.05,0.07),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\atk, 0.005,
 				\rel, 0.05,
 				\legato, 0.1,
@@ -403,8 +398,8 @@
 				\dur, Pwhite(0.05,0.25,rrand(20,26)),
 				\freq, exprand(1900,2900),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
-				\band_width, Ndef(\crackles_band_width),
-				\amp, Pwhite(0.05,0.07),
+				\band_width, 200,
+				\amp, Pfunc({Ndef(\crackles_amp).get(\val) * rrand(0.80,1.20)}),
 				\atk, 0.005,
 				\rel, 0.05,
 				\legato, 0.1,
@@ -425,9 +420,9 @@
 		\order, Pseq([-1,-1,1,1],inf),
 		\midinote, Pfunc({ |ev| ~t_pitch.(~melody[0][~e_melody_lower[\melody_index]] -60, [1,4,8],ev[\order],12)+60}),
 		\band_width, Ndef(\noise_band_width),
-		\dur, 4,
+		\dur, Pseq([Rest(2),Pn(4,inf)],inf),
 		\pan, Pfunc({~e_melody_lower[\pan] + 0.5}),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.7}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.85}),
 		\atk, 1,
 		\dec, 0,
 		\sus, 1,
@@ -442,14 +437,14 @@
 .add(\start_boom -> {
 	Pbindef(\taps_boom,
 		\instrument, \perc,
-		\midinote, ~melody[1][1]-24,
+		\midinote, Ptuple([~melody[1][0]-24,~melody[1][0]-12]),
 		\dur, 16,
 		\pan, Pseq([Pwhite(0.0,2.0,1), 0],inf),
-		\amp, 0.4,
+		\amp, 1.5,
 		\subamp, Pkey(\amp),
 		\rel, 4,
 		\band_width, 100,
-		\subamp, 0.2,
+		\subamp, Pfunc({Ndef(\melody_amp).get(\val) * 2}),
 		\legato, 0.2,
 		\out, ~bus_reverb,
 	).play(t, quant: 4);
@@ -457,16 +452,11 @@
 	\start_boom.postln;
 })
 
-.add(\droplets_hi_unify_rhythm -> {
-
-})
-
-.add(\droplets_lo_unify_rhythm -> {
-
-})
-
-.add(\crackling_unify_rhythm -> {
-
+.add(\make_legato -> {
+	Pbindef(\t_hi, \legato, 1);
+	Pbindef(\t_lo, \legato, 1);
+	Pbindef(\melody_lower, \legato, 1);
+	Pbindef(\melody_upper, \legato, 1);
 })
 
 .add(\crackles_lo_stop -> {
@@ -480,7 +470,7 @@
 })
 
 .add(\melody_lo_stop -> {
-	Pbindef(\melody_lower).stop;
+	Pbindef(\melody_lower, \midinote, Rest());
 	\melody_lo_stop.postln;
 })
 
@@ -494,19 +484,55 @@
 	\t_lo_stop.postln;
 })
 
+
 .add(\melody_hi_stop -> {
 	Pbindef(\melody_upper).stop;
 	\melody_hi_stop.postln;
+	Pbindef(\melody_lower).stop;
+
+})
+
+.add(\rumble_stop -> {
+	Pbindef(\rumble).stop;
+})
+
+.add(\droplets_lo_stop -> {
+	Pbindef(\droplets_hi).stop;
+})
+
+.add(\droplets_hi_stop -> {
+	Pbindef(\droplets_lo).stop;
+})
+
+.add(\boom_stop -> {
+	Pbindef(\taps_boom).stop;
 });
+
+
 
 // A routine to execute the above events
 
 ~piece = Routine({
+
+	Ndef.clear();
+	Ndef(\noise_band_width, {\val.kr(200)});
+	Ndef(\melody_amp, {\val.kr(0.4)});
+	Ndef(\tapping_amp, {\val.kr(0.2)});
+	Ndef(\crackles_amp, {\val.kr(0.1)});
+
+	if (~record, {~startRecording.()});
+
+	1.wait;
+
 	"playing events".postln;
+
 	~events[\noise_mid_start].();
 
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
-	~parameterChange.(Ndef(\melody_amp), Env([0.2,0.2,0.4,0.2,0.05],[90,45,45]),t,1);
+
+	~parameterChange.(Ndef(\melody_amp), Env([0.3,0.4,0.7,0.3,0.1],[25,90,45,45]),t,1);
+	~parameterChange.(Ndef(\tapping_amp), Env([0.15,0.25,0.6,0.15,0.05],[25,90,45,45]),t,1);
+	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.15,0.4,0.15,0.05],[25,90,45,45]),t,1);
 
 	4.wait;
 	~events[\rumble_start].();
@@ -548,14 +574,12 @@
 	~events[\t_hi_start].();
 	4.wait;
 	~events[\start_boom].();
-	10.wait;
+	6.wait;
+	~events[\make_legato].();
+	4.wait;
 	~events[\crackles_hi_stop].();
 	10.wait;
 	~events[\crackles_lo_stop].();
-	10.wait;
-	~events[\droplets_hi_stop].();
-	10.wait;
-	~events[\droplets_lo_stop].();
 	10.wait;
 	~events[\melody_lo_stop].();
 	10.wait;
@@ -564,6 +588,14 @@
 	~events[\t_lo_stop].();
 	10.wait;
 	~events[\melody_hi_stop].();
+	10.wait;
+	~events[\droplets_hi_stop].();
+	12.wait;
+	~events[\droplets_lo_stop].();
+	~events[\rumble_stop].();
+	4.wait;
+	~events[\boom_stop].();
+
 	"finished playing events".postln;
 	4.wait;
 	if (~record, {~stopRecording.()});
@@ -574,7 +606,7 @@
 
 (
 t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
-if (~record, {~startRecording.()});
 ~piece.reset;
 ~piece.play(t, quant: 4);
 )
+

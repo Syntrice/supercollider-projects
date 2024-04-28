@@ -20,6 +20,8 @@ if (s.serverRunning.not, {
 	ServerQuit.remove(~cleanup);
 };
 
+s.newAllocators;
+
 ~cleanup.();
 ServerQuit.add(~cleanup);
 
@@ -159,7 +161,7 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amp signal
-		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		send = send * amp_env * \amp.kr(1) * -16.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
 		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
@@ -225,7 +227,7 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amp signal
-		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		send = send * amp_env * \amp.kr(1) * -18.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
 		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
@@ -258,7 +260,7 @@ s.waitForBoot({
 		env = Env.perc(\atk.ir(0.01), \rel.ir(0.25)).ar(Done.freeSelf, gate: \gate.kr(1));
 
 		// Amplitude
-		snd = snd * env * \amp.kr(1) * 6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		snd = snd * env * \amp.kr(1) * -7.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Delay
 		//snd = CombC.ar(snd, 0.01, XLine.kr(0.0001, 0.01, 20), 0.2);
@@ -387,5 +389,38 @@ s.waitForBoot({
 
 
 	"setup complete!".postln;
+
+	// -- MIDI --
+
+	MIDIClient.init;
+	MIDIIn.connectAll;
+
+	~notes = Array.newClear(128);
+
+	MIDIdef.noteOn(\impulse, {
+		arg vel, nn, chan, src;
+		[vel, nn].postln;
+		~notes[nn] = Synth.new(
+			\perc,
+			[
+				\freq, nn.midicps,
+				\amp, 1.2,
+				\gate, 1,
+				\atk, 0.01,
+				\pamp, 2,
+				\out, ~bus_reverb,
+				\cutoff, 2000,
+			]
+		);
+	});
+
+
+
+	MIDIdef.noteOff(\noteOffTest, {
+		arg vel, nn, chan, src;
+		[vel, nn].postln;
+		~notes[nn].set(\gate, 0);
+		~notes[nn] = nil;
+	});
 });
 )
