@@ -1,57 +1,65 @@
-// Server Setup
 (
-o = Server.default.options;
-o.device = "ASIO : Focusrite USB ASIO";
-o.hardwareBufferSize = 1024;
-s.latency = 0.3;
-s.options.numAudioBusChannels = 128;
-s.options.numOutputBusChannels = 9; // 8 plus subwoofer
-s.options.numInputBusChannels = 2;
-Server.default.reboot;
-)
+// -- Setup ---
 
-(
-Routine {
+if (s.serverRunning.not, {
+	"booting server".postln;
+	o = Server.default.options;
+	o.device = "ASIO : Focusrite USB ASIO";
+	o.hardwareBufferSize = 1024; // high buffer size to reduce audio artifacts
+	s.latency = 0.3; // higher latency to reduce audio artifacts
+	s.options.numAudioBusChannels = 128;
+	s.options.numOutputBusChannels = 11; // 8.1 + stereo mixdown channels
+	Server.default.reboot;
+	"booting complete".postln;
+});
 
-	// --- Parameters ---
+~cleanup = {
+	"cleaning up".postln;
+	s.freeAll;
+	ServerTree.remove(~initTree);
+	ServerQuit.remove(~cleanup);
+};
 
-	~stereo_mixdown = true; // toggle to enable a stereo mixdown
-	~numChannels = 8; // number of mixing channels
+~cleanup.();
+ServerQuit.add(~cleanup);
+
+s.waitForBoot({
+	"setting up".postln;
 
 	// --- Channels ---
 
-	// group for all mixing related synths
-	~mixer.free; ~mixer = Group(s, \addToTail);
+	~setup_busses = {
+		s.newAllocators;
+		~bus_master = Bus.audio(s, 9);
+		~bus_reverb = Bus.audio(s, 8);
+	};
 
-	// Master
+	~setup_busses.();
+
 	SynthDef(\master, {
 		arg in;
-		var snd;
-		var l, r, c, lfe, ls, rs, bsl, bsr, bc;
+		var snd, l, r, c, lfe, ls, rs, bsl, bsr, bc, r_mix, l_mix;
 
-		// plus 1 extra for LFE
-		snd = In.ar(in, ~numChannels + 1);
+		// 8.1 channels
+		snd = In.ar(in, 9);
 
+		// unpack input audio
 		#c, r, rs, bsr, bc, bsl, ls, l, lfe = snd;
-
 
 		// Low pass on LFE channel
 		lfe = LPF.ar(lfe,120);
 
+		// Produce stereo-mixdown
+		r_mix = Mix([c * 0.707, l * 1, ls * 0.707, bsl * 0.707, bc * 0.707]);
+		l_mix = Mix([c * 0.707, r * 1, rs * 0.707, bsr * 0.707, bc * 0.707]);
 
-		if (~stereo_mixdown) {
-
-			// produce a stereo-mixdown
-			l = Mix([c * 0.707, l * 1, ls * 0.707, bsl * 0.707, bc * 0.707]);
-			r = Mix([c * 0.707, r * 1, rs * 0.707, bsr * 0.707, bc * 0.707]);
-			snd = [l,r];
-
-		} {
-
-			// Reorder output to match speaker arrangement
-			snd = [l, r, c, lfe, ls, rs, bsl, bsr, bc];
-		};
-
+		if(~stereoOut.not, {
+			// reorder output to match speaker arrangement
+			snd = [l, r, c, lfe, ls, rs, bsl, bsr, bc, l_mix, r_mix];
+		}, {
+			// for stereo out, l_mix and r_mix to output bus 0 and 1.
+			snd = [l_mix, r_mix];
+		});
 
 		// Limiter
 		snd = Limiter.ar(snd, -3.dbamp);
@@ -60,38 +68,43 @@ Routine {
 	}
 	).add;
 
-	0.1.wait;
-
-	~bus_master.free; ~bus_master = Bus.audio(s, 9);
-	~channel_master.free; ~channel_master = Synth(\master, [\in, ~bus_master], ~mixer, \addToTail);
-
-	// Reverb
 	SynthDef(\reverb, {
 		arg in;
 		var snd, input, leak;
 
+		// 8.1 channels
 		input = In.ar(in, 9);
+
+		// new output array
 		snd = Array(9);
 
+		// leak factor
 		leak = input.sum * 0.01;
 
-		~numChannels.do { |i|
+		// create reverb ugens
+		8.do { |i|
 			snd.add(FreeVerb.ar(input[i],0.66,0.8));
 			snd[i] = snd[i] + FreeVerb.ar(leak,1,0.8);
 		};
 
-		// lfe reverb
+		// create LFE reverb
 		snd.add(FreeVerb.ar(input[8],0.66,0.8));
 
 		Out.ar(~bus_master, snd);
 	}
 	).add;
 
-	0.1.wait;
+	s.sync;
 
-	~bus_reverb.free; ~bus_reverb = Bus.audio(s, 8);
-	~channel_reverb.free; ~channel_reverb = Synth(\reverb, [\in, ~bus_reverb], ~mixer);
+	~initTree = {
+		~setup_busses.();
+		~mixer = Group(s, \addToTail);
+		~synth_master = Synth(\master, [\in, ~bus_master], ~mixer, \addToTail);
+		~synth_reverb = Synth(\reverb, [\in, ~bus_reverb], ~mixer);
+	};
 
+	ServerTree.add(~initTree);
+	ServerTree.run;
 
 	// --- Synths ---
 
@@ -149,7 +162,7 @@ Routine {
 		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
-		output = PanAz.ar(~numChannels, send, \pan.kr(0), orientation: 0);
+		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
 			send * \subamp.kr(0)
@@ -159,7 +172,9 @@ Routine {
 		Out.ar(\out.kr(~bus_master), output)
 	}.add;
 
-	// Noise engine
+	s.sync;
+
+	// Impulse
 	SynthDef.new(\impulse) {
 		var noise, partials, band_width, freq, temp, amp_env, send, dtune, pamp, pdrift, pan, output;
 
@@ -213,7 +228,7 @@ Routine {
 		send = send * amp_env * \amp.kr(1) * -6.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
-		output = PanAz.ar(~numChannels, send, \pan.kr(0), orientation: 0);
+		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
 			send * \subamp.kr(0)
@@ -222,6 +237,8 @@ Routine {
 		// Output
 		Out.ar(\out.kr(~bus_master), output)
 	}.add;
+
+	s.sync;
 
 	// Percussion
 	SynthDef(\perc, {
@@ -248,7 +265,7 @@ Routine {
 
 
 		// Pan signal
-		output = PanAz.ar(~numChannels, snd, \pan.kr(0), orientation: 0);
+		output = PanAz.ar(8, snd, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
 			snd * \subamp.kr(0)
@@ -259,50 +276,11 @@ Routine {
 	};
 	).add;
 
-
+	s.sync;
 
 	// --- Functions ---
 
-	~tempoChange = {
-
-		// Uses an envelope to define continous tempo variation over a period of beats:
-		arg env, clock = TempoClock.default, control_rate = 8;
-		var duration, i;
-
-		i = 0.0;
-		duration = env.totalDuration;
-		clock.schedAbs(clock.nextBar, {
-			clock.tempo_(env.at(i + (clock.tempo / control_rate))/60);
-			i = i + (clock.tempo / control_rate);
-
-			env.at(i).postln;
-			if(i < duration) {clock.tempo / control_rate} {
-				\done.postln;
-			};
-		});
-		duration;
-	};
-
-	~scheduleFunc = {
-
-		// Uses an envelope over a period of time, passing the control steps to a function
-		arg func, env, clock = TempoClock.default, control_rate = 44100 / 64;
-		var duration, i;
-
-		i = 0.0;
-		duration = env.totalDuration;
-		clock.schedAbs(clock.nextBar, {
-			func.(env.at(i));
-			i = i + (clock.tempo / control_rate);
-
-			env.at(i).postln;
-			if(i < duration) {clock.tempo / (control_rate)} {
-				func.(env.at(env.totalDuration)); \done.postln;
-			};
-		});
-		duration;
-	};
-
+	// Ndef modulation function
 	~parameterChange = {
 
 		// Uses an envelope over a period of time to change an Ndef parameter
@@ -324,40 +302,8 @@ Routine {
 		duration;
 	};
 
-	// Binds an Ndef to a pattern parameter and modulates it
-	~modulatePattern = {
-		arg pattern, parameter, env, t, control_rate = 44100 / 64;
-		var ndef_name;
 
-		ndef_name = pattern ++ "_" ++ parameter;
-
-		Ndef(ndef_name.asSymbol, {\val.kr(env.at(0))});
-		Pbindef(pattern.asSymbol, parameter.asSymbol, Ndef(ndef_name.asSymbol));
-		~parameterChange.(Ndef(ndef_name.asSymbol), env, t, control_rate);
-
-	};
-
-	// Frees a bound Ndef from a pattern, replacing the parameter with specified value
-	~freeNdef = {
-		arg pattern, parameter, value;
-		var ndef_name;
-
-		ndef_name = pattern ++ "_" ++ parameter;
-		Pbindef(pattern.asSymbol, parameter.asSymbol, value);
-		Ndef(ndef_name.asSymbol).clear;
-	};
-
-	// Binds an Ndef to a pattern parameter with the specified function
-	~bindFunc = {
-		arg pattern, parameter, func;
-		var ndef_name;
-
-		ndef_name = pattern ++ "_" ++ parameter;
-
-		Ndef(ndef_name.asSymbol, func);
-		Pbindef(pattern.asSymbol, parameter.asSymbol, Ndef(ndef_name.asSymbol));
-	};
-
+	// Tintinnabuli function
 	~t_pitch = {
 		arg m_pitch, chord, order, octave_steps = 8;
 		var m_oct, oct, direction, magnitude, value, i;
@@ -413,71 +359,33 @@ Routine {
 		value;
 	};
 
-	// -- MIDI --
 
-	MIDIClient.init;
-	MIDIIn.connectAll;
+	~startRecording = {
+		if(~stereoOut, {
+			~stereo_recorder = Recorder(s);
+			~stereo_recorder.filePrefix = "FROM_THE_VOID_STEREO_";
+			~stereo_recorder.record(bus: 0, numChannels: 2);
+		}, {
+			~stereo_recorder = Recorder(s);
+			~stereo_recorder.filePrefix = "FROM_THE_VOID_STEREO_";
+			~surround_recorder = Recorder(s);
+			~surround_recorder.filePrefix = "FROM_THE_VOID_SURROUND_";
 
-	~notes = Array.newClear(128);
-	~t = Array.newClear(128);
+			~surround_recorder.record(bus: 0, numChannels: 9);
+			~stereo_recorder.record(bus: 9, numChannels: 2);
+		});
+	};
 
-	// chord to use
-	~chord = [1,4,8];
-	~order = -1;
-	~orbit = false;
-
-	MIDIdef.noteOn(\noteOnTest, {
-		arg vel, nn, chan, src;
-		[vel, nn, chan, nn.midicps].postln;
-		~notes[nn] = Synth.new(
-			\perc,
-			[
-				\freq, (nn).midicps,
-				\amp, vel.linexp(1,127,0.01,0.3),
-				\gate, 1,
-				//\cutoff, 2000,
-				\band_width, 5,
-				\pamp, 3,
-				\atk, 3,
-				\rel, 3,
-				\pan, [0,0.25,0.5,0.75,1.00,1.25,1.5,1.75].choose;
-
-			],
-		);
-		~t[nn] = Synth.new(
-			\perc,
-			[
-				\freq, (~t_pitch.((nn - 60), ~chord, ~order, 12) + 60).midicps,
-				\amp, vel.linexp(1,127,0.01,0.3),
-				\gate, 1,
-				//\cutoff, 2000,
-				\band_width, 5,
-				\pamp, 3,
-				\atk, 3,
-				\rel, 3,
-				\pan, [0,0.25,0.5,0.75,1.00,1.25,1.5,1.75].choose;
-			],
-		);
-
-		// inverts direction every note
-		if (~orbit) {
-			~order = ~order * -1;
-			~order.postln;
-		};
-	});
-
-	MIDIdef.noteOff(\noteOffTest, {
-		arg vel, nn, chan, src;
-		[vel, nn].postln;
-		~notes[nn].set(\gate, 0);
-		~notes[nn] = nil;
-		~t[nn].set(\gate, 0);
-		~t[nn] = nil;
+	~stopRecording = {
+		if(~stereoOut, {
+			~stereo_recorder.stopRecording;
+		}, {
+			~stereo_recorder.stopRecording;
+			~surround_recorder.stopRecording;
+		});
+	};
 
 
-	});
-
-	\setup_complete.postln;
-
-}.play;
+	"setup complete!".postln;
+});
 )

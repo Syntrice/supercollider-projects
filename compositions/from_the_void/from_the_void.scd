@@ -1,27 +1,32 @@
-// Tempo Arguments
 (
+// --- Global Parameters and Setup ---
 ~tempo = 56;
 ~signiture = 4;
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+~stereoOut = true;
+~record = false;
+
+"from_the_void_setup.scd".loadRelative;
 )
 
+
+// --- Piece Setup ---
+
 (
+// Midi notes for melody 1 and melody 2.
 ~melody = #[
 	[64,66,75,73,68,69,71,69,71,73,68,66,75,76], // 329.64 to 659.26 hz
 	[49,51,59,57,52,54,56,54,56,57,52,51,59,61] // 138.59 to 277.18
 ];
-)
 
-(
+// A dictionary of events to be executed throughout the piece
 ~events = Dictionary()
-.add(\setup -> {
+
+.add(\noise_mid_start -> {
+
 	Ndef(\noise_band_width, {\val.kr(200)});
 	Ndef(\tapping_band_width, {\val.kr(200)});
 	Ndef(\crackles_band_width, {\val.kr(200)});
 	Ndef(\melody_amp, {\val.kr(0.2)});
-})
-
-.add(\noise_mid_start -> {
 
 	Pbindef(\noise_mid,
 		\instrument, \noise_engine,
@@ -492,14 +497,14 @@ t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~sign
 .add(\melody_hi_stop -> {
 	Pbindef(\melody_upper).stop;
 	\melody_hi_stop.postln;
-})
+});
 
+// A routine to execute the above events
 
-)
-
-(
-r = Routine({
+~piece = Routine({
+	"playing events".postln;
 	~events[\noise_mid_start].();
+
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
 	~parameterChange.(Ndef(\melody_amp), Env([0.2,0.2,0.4,0.2,0.05],[90,45,45]),t,1);
 
@@ -559,20 +564,17 @@ r = Routine({
 	~events[\t_lo_stop].();
 	10.wait;
 	~events[\melody_hi_stop].();
-
-	\done.postln;
+	"finished playing events".postln;
+	4.wait;
+	if (~record, {~stopRecording.()});
 });
 )
 
-~events[\tapping_to_droplets_hi].();
+// --- Play ---
 
-~events[\melody_lo_start].();
-~events[\melody_hi_start].();
-~events[\t_lo_start].();
-~events[\t_hi_start].();
-
-~events[\setup].();
-r.play(t, quant: 4);
-
-
-~e_melody_lower[\melody_index];
+(
+t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
+if (~record, {~startRecording.()});
+~piece.reset;
+~piece.play(t, quant: 4);
+)
