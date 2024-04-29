@@ -3,7 +3,7 @@
 ~tempo = 56;
 ~signiture = 4;
 ~stereoOut = true;
-~record = true;
+~record = false;
 
 "from_the_void_setup.scd".loadRelative;
 )
@@ -315,10 +315,10 @@
 		\instrument, \perc,
 		\midinote, Pfunc({(~t_pitch.(~melody[0][~e_melody_lower[\melody_index]] -60, [1,4,8],1,12)+60+12)}),
 		\dur, Pwhite(0.25, 0.5,inf),
-		\pan, Pbrown(0.0,8.0,0.25,inf),
+		\pan, Pbrown(0.0,8.0,0.125,inf),
 		\legato, 0.1,
 		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
-		\band_width, 20,
+		\band_width, Ndef(\noise_band_width),
 		\out, ~bus_reverb,
 	).play(t, quant: 1);
 
@@ -353,7 +353,7 @@
 		\instrument, \perc,
 		\midinote, Pfunc({(~t_pitch.(~melody[1][~e_melody_lower[\melody_index]] -60, [1,4,8],1,12)+60+12)}),
 		\dur, Pwhite(0.25, 0.5,inf),
-		\pan, Pbrown(0.0,8.0,0.25,inf),
+		\pan, Pbrown(0.0,8.0,0.125,inf),
 		\legato, 0.1,
 		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
 		\band_width, Ndef(\noise_band_width),
@@ -438,9 +438,9 @@
 	Pbindef(\taps_boom,
 		\instrument, \perc,
 		\midinote, Ptuple([~melody[1][0]-24,~melody[1][0]-12]),
-		\dur, 16,
+		\dur, 8,
 		\pan, Pseq([Pwhite(0.0,2.0,1), 0],inf),
-		\amp, 1.5,
+		\amp, 0.85,
 		\subamp, Pkey(\amp),
 		\rel, 4,
 		\band_width, 100,
@@ -453,10 +453,11 @@
 })
 
 .add(\make_legato -> {
-	Pbindef(\t_hi, \legato, 1);
-	Pbindef(\t_lo, \legato, 1);
-	Pbindef(\melody_lower, \legato, 1);
-	Pbindef(\melody_upper, \legato, 1);
+	Pbindef(\t_hi, \legato, 1.0);
+	Pbindef(\t_lo, \legato, 1.0);
+	Pbindef(\melody_lower, \legato, 1.0);
+	Pbindef(\melody_upper, \legato, 1.0);
+	\make_legato.postln;
 })
 
 .add(\crackles_lo_stop -> {
@@ -484,6 +485,38 @@
 	\t_lo_stop.postln;
 })
 
+.add(\droplets_decrease_density_hi -> {
+	Pbindef(\droplets_hi,
+		\instrument, \perc,
+		\midinote, Pfunc({(~t_pitch.(~melody[0][~e_melody_lower[\melody_index]] -60, [1,4,8],1,12)+60+12)}),
+		\dur, Pwhite(0.4, 0.7,inf),
+		\pan, Pbrown(0.0,8.0,0.125,inf),
+		\rel, 0.5,
+		\legato, 0.1,
+		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
+		\band_width, Ndef(\noise_band_width),
+		\out, ~bus_reverb,
+	).play(t, quant: 1);
+
+	\droplets_decrease_density_hi.postln;
+})
+
+.add(\droplets_decrease_density_lo -> {
+	Pbindef(\droplets_lo,
+		\instrument, \perc,
+		\midinote, Pfunc({(~t_pitch.(~melody[1][~e_melody_lower[\melody_index]] -60, [1,4,8],1,12)+60+12)}),
+		\dur, Pwhite(0.4, 0.7,inf),
+		\pan, Pbrown(0.0,8.0,0.125,inf),
+		\legato, 0.1,
+		\rel, 0.5,
+		\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
+		\band_width, Ndef(\noise_band_width),
+		\out, ~bus_reverb,
+	).play(t, quant: 1);
+
+	\droplets_decrease_density_lo.postln;
+})
+
 
 .add(\melody_hi_stop -> {
 	Pbindef(\melody_upper).stop;
@@ -494,18 +527,22 @@
 
 .add(\rumble_stop -> {
 	Pbindef(\rumble).stop;
+	\rumble_stop.postln;
 })
 
 .add(\droplets_lo_stop -> {
 	Pbindef(\droplets_hi).stop;
+	\droplets_lo_stop.postln;
 })
 
 .add(\droplets_hi_stop -> {
 	Pbindef(\droplets_lo).stop;
+	\droplets_hi_stop.postln;
 })
 
 .add(\boom_stop -> {
 	Pbindef(\taps_boom).stop;
+	\boom_stop.postln;
 });
 
 
@@ -529,10 +566,9 @@
 	~events[\noise_mid_start].();
 
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
-
-	~parameterChange.(Ndef(\melody_amp), Env([0.3,0.4,0.7,0.3,0.1],[25,90,45,45]),t,1);
-	~parameterChange.(Ndef(\tapping_amp), Env([0.15,0.25,0.6,0.15,0.05],[25,90,45,45]),t,1);
-	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.15,0.4,0.15,0.05],[25,90,45,45]),t,1);
+	~parameterChange.(Ndef(\melody_amp), Env([0.15,0.25,0.3,0.45,0.8,0.3,0.15],[15,15,30,75,10,35]),t,1);
+	~parameterChange.(Ndef(\tapping_amp), Env([0.05,0.125,0.2,0.4,0.55,0.2,0.15],[15,15,30,75,10,35]),t,1);
+	~parameterChange.(Ndef(\crackles_amp), Env([0.025,0.1,0.15,0.2,0.3,0.1,0.15],[15,15,30,75,10,35]),t,1);
 
 	4.wait;
 	~events[\rumble_start].();
@@ -574,28 +610,31 @@
 	~events[\t_hi_start].();
 	4.wait;
 	~events[\start_boom].();
+	~events[\rumble_stop].();
 	6.wait;
 	~events[\make_legato].();
 	4.wait;
 	~events[\crackles_hi_stop].();
-	10.wait;
+	4.wait;
 	~events[\crackles_lo_stop].();
 	10.wait;
 	~events[\melody_lo_stop].();
 	10.wait;
 	~events[\t_hi_stop].();
-	10.wait;
+	5.wait;
+	~events[\droplets_decrease_density_hi].();
+	5.wait;
 	~events[\t_lo_stop].();
-	10.wait;
+	5.wait;
+	~events[\droplets_decrease_density_lo].();
+	5.wait;
 	~events[\melody_hi_stop].();
 	10.wait;
 	~events[\droplets_hi_stop].();
-	12.wait;
+	3.wait;
 	~events[\droplets_lo_stop].();
-	~events[\rumble_stop].();
 	4.wait;
 	~events[\boom_stop].();
-
 	"finished playing events".postln;
 	4.wait;
 	if (~record, {~stopRecording.()});
