@@ -3,12 +3,14 @@
 
 if (s.serverRunning.not, {
 	"booting server".postln;
+	s.boot;
 	o = Server.default.options;
 	o.device = "ASIO : Focusrite USB ASIO";
-	o.hardwareBufferSize = 1024; // high buffer size to reduce audio artifacts
-	s.latency = 0.3; // higher latency to reduce audio artifacts
-	s.options.numAudioBusChannels = 128;
-	s.options.numOutputBusChannels = 11; // 8.1 + stereo mixdown channels
+	//o.device = "ASIO : MOTU Audio ASIO";
+	//o.hardwareBufferSize = 1024; // high buffer size to reduce audio artifacts
+	//s.latency = 0.3; // higher latency to reduce audio artifacts
+	s.options.numOutputBusChannels = 14;
+	s.options.numInputBusChannels = 32;
 	Server.default.reboot;
 	"booting complete".postln;
 });
@@ -20,27 +22,18 @@ if (s.serverRunning.not, {
 	ServerQuit.remove(~cleanup);
 };
 
-s.newAllocators;
-
 ~cleanup.();
 ServerQuit.add(~cleanup);
+
+s.newAllocators;
 
 s.waitForBoot({
 	"setting up".postln;
 
 	// --- Channels ---
-
-	~setup_busses = {
-		s.newAllocators;
-		~bus_master = Bus.audio(s, 9);
-		~bus_reverb = Bus.audio(s, 8);
-	};
-
-	~setup_busses.();
-
 	SynthDef(\master, {
 		arg in;
-		var snd, l, r, c, lfe, ls, rs, bsl, bsr, bc, r_mix, l_mix;
+		var snd, l, r, c, lfe, ls, rs, bsl, bsr, bc, r_mix, l_mix, mix;
 
 		// 8.1 channels
 		snd = In.ar(in, 9);
@@ -52,23 +45,31 @@ s.waitForBoot({
 		lfe = LPF.ar(lfe,120);
 
 		// Produce stereo-mixdown
-		r_mix = Mix([c * 0.707, l * 1, ls * 0.707, bsl * 0.707, bc * 0.707]);
-		l_mix = Mix([c * 0.707, r * 1, rs * 0.707, bsr * 0.707, bc * 0.707]);
+		r_mix = Mix([c * 0.5, l * 0.5, ls * 0.5, bsl * 0.5, bc * 0.5]);
+		l_mix = Mix([c * 0.5, r * 0.5, rs * 0.5, bsr * 0.5, bc * 0.5]);
 
 		if(~stereoOut.not, {
 			// reorder output to match speaker arrangement
-			snd = [l, r, c, lfe, ls, rs, bsl, bsr, bc, l_mix, r_mix];
+			snd = [l, r, c, lfe, ls, rs, bsl, bsr, bc];
 		}, {
 			// for stereo out, l_mix and r_mix to output bus 0 and 1.
 			snd = [l_mix, r_mix];
 		});
 
 		// Limiter
+		//snd = snd * 3.dbamp;
 		snd = Limiter.ar(snd, -3.dbamp);
 
-		Out.ar(0, snd);
+		mix = [l_mix, r_mix];
+		mix = Limiter.ar(mix, -3.dbamp);
+
+
+		Out.ar(\srec.kr(0), mix);
+		Out.ar(\out.kr(0), snd);
 	}
 	).add;
+
+	s.sync;
 
 	SynthDef(\reverb, {
 		arg in;
@@ -92,17 +93,20 @@ s.waitForBoot({
 		// create LFE reverb
 		snd.add(FreeVerb.ar(input[8],0.66,0.8));
 
-		Out.ar(~bus_master, snd);
+		Out.ar(\out.kr(0), snd);
 	}
 	).add;
 
 	s.sync;
 
 	~initTree = {
-		~setup_busses.();
+		~bus_master = Bus.audio(s, 9);
+		~bus_reverb = Bus.audio(s, 9);
+		~bus_stereo_record = Bus.audio(s, 2);
+
 		~mixer = Group(s, \addToTail);
-		~synth_master = Synth(\master, [\in, ~bus_master], ~mixer, \addToTail);
-		~synth_reverb = Synth(\reverb, [\in, ~bus_reverb], ~mixer);
+		~synth_master = Synth(\master, [\in, ~bus_master, \srec, ~bus_stereo_record], ~mixer, \addToTail);
+		~synth_reverb = Synth(\reverb, [\in, ~bus_reverb, \out, ~bus_master], ~mixer);
 	};
 
 	ServerTree.add(~initTree);
@@ -161,13 +165,13 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amp signal
-		send = send * amp_env * \amp.kr(1) * -16.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		send = send * amp_env * \amp.kr(1) * -8.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
 		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
-			send * \subamp.kr(0)
+			send * \subamp.kr(0) * 5.dbamp;
 		];
 
 		// Output
@@ -227,13 +231,13 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amp signal
-		send = send * amp_env * \amp.kr(1) * -18.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		send = send * amp_env * \amp.kr(1) * -10.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan signal
 		output = PanAz.ar(8, send, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
-			send * \subamp.kr(0)
+			send * \subamp.kr(0) * 5.dbamp;
 		];
 
 		// Output
@@ -260,7 +264,7 @@ s.waitForBoot({
 		env = Env.perc(\atk.ir(0.01), \rel.ir(0.25)).ar(Done.freeSelf, gate: \gate.kr(1));
 
 		// Amplitude
-		snd = snd * env * \amp.kr(1) * -7.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		snd = snd * env * \amp.kr(1) * -1.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Delay
 		//snd = CombC.ar(snd, 0.01, XLine.kr(0.0001, 0.01, 20), 0.2);
@@ -270,7 +274,7 @@ s.waitForBoot({
 		output = PanAz.ar(8, snd, \pan.kr(0), orientation: 0);
 
 		output = [output[0],output[1],output[2],output[3],output[4],output[5],output[6],output[7],
-			snd * \subamp.kr(0)
+			snd * \subamp.kr(0) * 5.dbamp;
 		];
 
 		// Output
@@ -366,7 +370,7 @@ s.waitForBoot({
 		if(~stereoOut, {
 			~stereo_recorder = Recorder(s);
 			~stereo_recorder.filePrefix = "FROM_THE_VOID_STEREO_";
-			~stereo_recorder.record(bus: 0, numChannels: 2);
+			~stereo_recorder.record(bus: ~bus_stereo_record, numChannels: 2);
 		}, {
 			~stereo_recorder = Recorder(s);
 			~stereo_recorder.filePrefix = "FROM_THE_VOID_STEREO_";
@@ -374,7 +378,7 @@ s.waitForBoot({
 			~surround_recorder.filePrefix = "FROM_THE_VOID_SURROUND_";
 
 			~surround_recorder.record(bus: 0, numChannels: 9);
-			~stereo_recorder.record(bus: 9, numChannels: 2);
+			~stereo_recorder.record(bus: ~bus_stereo_record, numChannels: 2);
 		});
 	};
 
@@ -387,40 +391,8 @@ s.waitForBoot({
 		});
 	};
 
-
 	"setup complete!".postln;
-
-	// -- MIDI --
-
-	MIDIClient.init;
-	MIDIIn.connectAll;
-
-	~notes = Array.newClear(128);
-
-	MIDIdef.noteOn(\impulse, {
-		arg vel, nn, chan, src;
-		[vel, nn].postln;
-		~notes[nn] = Synth.new(
-			\perc,
-			[
-				\freq, nn.midicps,
-				\amp, 1.2,
-				\gate, 1,
-				\atk, 0.01,
-				\pamp, 2,
-				\out, ~bus_reverb,
-				\cutoff, 2000,
-			]
-		);
-	});
-
-
-
-	MIDIdef.noteOff(\noteOffTest, {
-		arg vel, nn, chan, src;
-		[vel, nn].postln;
-		~notes[nn].set(\gate, 0);
-		~notes[nn] = nil;
-	});
 });
 )
+
+Synth(\perc, [\out, ~bus_reverb]);

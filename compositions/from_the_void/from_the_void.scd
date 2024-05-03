@@ -1,13 +1,13 @@
 (
 // --- Global Parameters and Setup ---
+
 ~tempo = 56;
 ~signiture = 4;
-~stereoOut = true;
-~record = false;
+~stereoOut = false;
+~record = true;
 
 "from_the_void_setup.scd".loadRelative;
 )
-
 
 // --- Piece Setup ---
 
@@ -29,7 +29,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pwhite(3,5,inf),
 		\pan, Pwhite(0.0,2.0,inf),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.60,0.85)}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.75,0.9)}),
 		\atk, 8, \dec, 0, \sus, 1, \rel, 8,
 		\out, ~bus_master,
 	).play(t, quant: 1);
@@ -41,12 +41,12 @@
 
 	Pbindef(\rumble, // low frequency noise engine for LFE use mainly
 		\instrument, \noise_engine,
-		\freq, Pexprand(40,120,inf), // LFE range frequencies randomized
+		\freq, Pexprand(20,80,inf), // LFE range frequencies randomized
 		\band_width, 40, // has a fair bit of ressonance
 		\dur, Pwhite(8,13,inf), // rumbles slightly less often than mid noise
 		\pan, Pwhite(0.0,2.0,inf), // non-LFE component pans across stereo field
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.40,0.60)}), // quiet volume for now
-		\subamp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.80,1.00)}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.45,0.65)}), // quiet volume for now
+		\subamp, Pfunc({Ndef(\lfe_amp).get(\val)}),
 		\atk, 4, \dec, 0, \sus, 1, \rel, 4, // quite slow attack and release
 		\legato, 0.5,
 		\out, ~bus_master,
@@ -88,7 +88,7 @@
 				\freq, exprand(138,277),
 				\pan, rrand(0.0,2.0) + Pwhite(-0.1,0.1),
 				\band_width, 200,
-				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(0.80,1.20)}),
+				\amp, Pfunc({Ndef(\tapping_amp).get(\val) * rrand(1.20,1.40)}),
 				\legato, 0.1,
 				\out, ~bus_reverb,
 			)},
@@ -107,9 +107,9 @@
 		\melody_index, Pseq((0..13),inf),
 		\dur, 4,
 		\pan, Pwhite(0.0,2.0,inf),
-		\atk, 2,
+		\atk, 0.5,
 		\rel, 8,
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 1.2}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) + 0.1}),
 		\pamp, 2,
 		\band_width, 10,
 		\legato, 0.1,
@@ -130,7 +130,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pwhite(3,5,inf),
 		\pan, Pwhite(0.0,2.0,inf),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.60,0.85)}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) * rrand(0.75,0.9)}),
 		\atk, 8, \dec, 0, \sus, 1, \rel, 8,
 		\out, ~bus_master,
 	).play(t, quant: 1);
@@ -248,7 +248,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, 4,
 		\pan, Pfunc({~e_melody_lower[\pan]+1}), // random pan across octophonic field
-		\amp, Pfunc({Ndef(\melody_amp).get(\val)}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) + 0.1}),
 		\atk, 1, // slow attack,
 		\dec, 0, // no decay
 		\sus, 1,
@@ -334,7 +334,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pseq([Rest(2),Pn(4,inf)],inf),
 		\pan, Pfunc({~e_melody_lower[\pan] - 0.5}),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.85}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) + 0.1}),
 		\atk, 1,
 		\dec, 0,
 		\sus, 1,
@@ -422,7 +422,7 @@
 		\band_width, Ndef(\noise_band_width),
 		\dur, Pseq([Rest(2),Pn(4,inf)],inf),
 		\pan, Pfunc({~e_melody_lower[\pan] + 0.5}),
-		\amp, Pfunc({Ndef(\melody_amp).get(\val) * 0.85}),
+		\amp, Pfunc({Ndef(\melody_amp).get(\val) + 0.1}),
 		\atk, 1,
 		\dec, 0,
 		\sus, 1,
@@ -440,11 +440,10 @@
 		\midinote, Ptuple([~melody[1][0]-24,~melody[1][0]-12]),
 		\dur, 8,
 		\pan, Pseq([Pwhite(0.0,2.0,1), 0],inf),
-		\amp, 0.85,
-		\subamp, Pkey(\amp),
+		\amp, Pfunc({Ndef(\lfe_amp).get(\val) - 0.1}),
 		\rel, 4,
 		\band_width, 100,
-		\subamp, Pfunc({Ndef(\melody_amp).get(\val) * 2}),
+		\subamp, Pfunc({Ndef(\lfe_amp).get(\val)}),
 		\legato, 0.2,
 		\out, ~bus_reverb,
 	).play(t, quant: 4);
@@ -553,9 +552,10 @@
 
 	Ndef.clear();
 	Ndef(\noise_band_width, {\val.kr(200)});
-	Ndef(\melody_amp, {\val.kr(0.4)});
-	Ndef(\tapping_amp, {\val.kr(0.2)});
-	Ndef(\crackles_amp, {\val.kr(0.1)});
+	Ndef(\melody_amp, {\val.kr(0.05)});
+	Ndef(\tapping_amp, {\val.kr(0.025)});
+	Ndef(\crackles_amp, {\val.kr(0.025)});
+	Ndef(\lfe_amp, {\val.kr(0.25)});
 
 	if (~record, {~startRecording.()});
 
@@ -566,9 +566,10 @@
 	~events[\noise_mid_start].();
 
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
-	~parameterChange.(Ndef(\melody_amp), Env([0.15,0.25,0.3,0.45,0.8,0.3,0.15],[15,15,30,75,10,35]),t,1);
-	~parameterChange.(Ndef(\tapping_amp), Env([0.05,0.125,0.2,0.4,0.55,0.2,0.15],[15,15,30,75,10,35]),t,1);
-	~parameterChange.(Ndef(\crackles_amp), Env([0.025,0.1,0.15,0.2,0.3,0.1,0.15],[15,15,30,75,10,35]),t,1);
+	~parameterChange.(Ndef(\melody_amp), Env( [0.10, 0.15, 0.25, 0.3, 0.35, 0.45, 0.75, 0.35, 0.2, 0.125,0.05],[5,10,15,15,15,55,10,30,16,10]),t,1);
+	~parameterChange.(Ndef(\lfe_amp),    Env( [0.20, 0.30, 0.35, 0.4, 0.45, 0.55, 0.75, 0.50, 0.45,0.35, 0.35],[5,10,15,15,15,55,10,30,16,10]),t,1);
+	~parameterChange.(Ndef(\tapping_amp), Env([0.05, 0.075,0.2,  0.2, 0.25, 0.35, 0.55, 0.25, 0.15,0.075,0.05],[5,15,15,15,15,55,10,30,16,10]),t,1);
+	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.075,0.15, 0.15,0.20, 0.30, 0.55, 0.15, 0.10,0.05, 0.05],[5,15,15,15,15,55,10,30,16,10]),t,1);
 
 	4.wait;
 	~events[\rumble_start].();
@@ -618,18 +619,18 @@
 	4.wait;
 	~events[\crackles_lo_stop].();
 	10.wait;
+	~events[\droplets_decrease_density_hi].();
+	10.wait;
 	~events[\melody_lo_stop].();
+	5.wait;
+	~events[\droplets_decrease_density_lo].();
 	10.wait;
 	~events[\t_hi_stop].();
 	5.wait;
-	~events[\droplets_decrease_density_hi].();
-	5.wait;
 	~events[\t_lo_stop].();
-	5.wait;
-	~events[\droplets_decrease_density_lo].();
-	5.wait;
-	~events[\melody_hi_stop].();
 	10.wait;
+	~events[\melody_hi_stop].();
+	5.wait;
 	~events[\droplets_hi_stop].();
 	3.wait;
 	~events[\droplets_lo_stop].();
@@ -648,4 +649,6 @@ t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signi
 ~piece.reset;
 ~piece.play(t, quant: 4);
 )
+
+
 
