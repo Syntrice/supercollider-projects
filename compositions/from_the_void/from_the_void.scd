@@ -5,7 +5,7 @@
 // please configure your audio device settings here, according to your setup
 
 ~audio_device = "ASIO : Focusrite USB ASIO";
-~numOutputBusChannels = 2;
+~numOutputBusChannels = 9;
 ~numInputBusChannels = 2;
 
 //~audio_device = "ASIO : MOTU Audio ASIO";
@@ -18,7 +18,7 @@
 ~tempo = 56; // tempo
 ~signiture = 4; // time signiture
 ~stereoOut = false; // set to true if using a stereo system
-~record = true; // set to true to enable recording. Interleaved surround sound and stereo mix files will be created. 
+~record = true; // set to true to enable recording. Interleaved surround sound and stereo mix files will be created.
 
 // --- Setup Code ---
 
@@ -579,10 +579,10 @@
 	~events[\noise_mid_start].();
 
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
-	~parameterChange.(Ndef(\melody_amp), Env( [0.10, 0.15, 0.25, 0.3, 0.35, 0.45, 0.75, 0.35, 0.2, 0.125,0.05],[5,10,15,15,15,55,10,30,16,10]),t,1);
-	~parameterChange.(Ndef(\lfe_amp),    Env( [0.20, 0.30, 0.35, 0.4, 0.45, 0.55, 0.75, 0.50, 0.45,0.35, 0.35],[5,10,15,15,15,55,10,30,16,10]),t,1);
-	~parameterChange.(Ndef(\tapping_amp), Env([0.05, 0.075,0.2,  0.2, 0.25, 0.35, 0.55, 0.25, 0.15,0.075,0.05],[5,15,15,15,15,55,10,30,16,10]),t,1);
-	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.075,0.15, 0.15,0.20, 0.30, 0.55, 0.15, 0.10,0.05, 0.05],[5,15,15,15,15,55,10,30,16,10]),t,1);
+	~parameterChange.(Ndef(\melody_amp), Env( [0.10, 0.15, 0.25, 0.3, 0.35, 0.45, 0.75, 0.35, 0.2, 0.125,0.05],[5,10,15,15,15,55,10,30,16,25]),t,1);
+	~parameterChange.(Ndef(\lfe_amp),    Env( [0.20, 0.30, 0.35, 0.4, 0.45, 0.55, 0.75, 0.50, 0.45,0.35, 0.35],[5,10,15,15,15,55,10,30,16,25]),t,1);
+	~parameterChange.(Ndef(\tapping_amp), Env([0.05, 0.075,0.2,  0.2, 0.25, 0.35, 0.55, 0.25, 0.15,0.075,0.05],[5,15,15,15,15,55,10,30,16,25]),t,1);
+	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.075,0.15, 0.15,0.20, 0.30, 0.55, 0.15, 0.10,0.05, 0.05],[5,15,15,15,15,55,10,30,16,25]),t,1);
 
 	4.wait;
 	~events[\rumble_start].();
@@ -633,7 +633,7 @@
 	~events[\crackles_lo_stop].();
 	10.wait;
 	~events[\droplets_decrease_density_hi].();
-	10.wait;
+	25.wait;
 	~events[\melody_lo_stop].();
 	5.wait;
 	~events[\droplets_decrease_density_lo].();
@@ -653,7 +653,7 @@
 	4.wait;
 	if (~record, {~stopRecording.()});
 });
-
+//201
 ~play_piece = {
 	t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
 	Pdef.removeAll;
