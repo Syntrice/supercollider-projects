@@ -36,6 +36,7 @@ s.waitForBoot({
 		var snd;
 
 		snd = In.ar(in, 2);
+		snd = snd * 6.dbamp;
 		snd = Limiter.ar(snd, -3.dbamp); // limiter for a clipping failsafe
 
 		Out.ar(\out.kr(0), snd);
@@ -95,7 +96,7 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amplitude
-		snd = snd * ampEnv * -17.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
+		snd = snd * ampEnv * -13.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
 
 		// Pan
 		snd = Pan2.ar(snd, \pan.kr(0));
@@ -133,43 +134,7 @@ s.waitForBoot({
 		).ar(Done.freeSelf, \gate.kr(1));
 
 		// Amplitude
-		snd = snd * ampEnv * -11.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
-
-		// Pan
-		snd = Pan2.ar(snd, \pan.kr(0));
-
-		// Output
-		Out.ar(\out.kr(~bus_master), snd);
-	}).add;
-
-	// Unison Square
-	SynthDef(\square, {
-		var snd, ampEnv, temp, gen, freq;
-
-		// Signal
-		freq = \freq.kr(440);
-		snd = 0;
-
-		4.do({
-			arg i;
-			temp = Pulse.ar(freq * LFNoise2.ar(1,\dtune.kr(0.01),1), \pwidth.kr(0.5));
-			snd = snd + temp;
-		});
-
-		// Filter
-		snd = LPF.ar(snd, \cutoff.kr(3000));
-
-		// Envelope
-		ampEnv = Env.adsr(
-			\atk.ir(0.01),
-			\dec.ir(0.3),
-			\sus.ir(0.5),
-			\rel.ir(0.5),
-			\peak.ir(1)
-		).ar(Done.freeSelf, \gate.kr(1));
-
-		// Amplitude
-		snd = snd * ampEnv * -17.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
+		snd = snd * ampEnv * -7.0.dbamp * AmpComp.kr(freq) * \amp.kr(1);
 
 		// Pan
 		snd = Pan2.ar(snd, \pan.kr(0));
@@ -196,7 +161,7 @@ s.waitForBoot({
 		env = Env.perc(\atk.ir(0.01), \rel.ir(0.25)).ar(Done.freeSelf, gate: \gate.kr(1));
 
 		// Amplitude
-		snd = snd * env * \amp.kr(1) * -1.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
+		snd = snd * env * \amp.kr(1) * 0.dbamp * (100 / band_width.sqrt) * AmpComp.kr(freq);
 
 		// Pan
 		snd = Pan2.ar(snd,\pan.kr(0));

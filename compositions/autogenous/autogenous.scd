@@ -22,7 +22,7 @@ Quarks.install("MathLib");
 
 ~tempo = 120; // tempo
 ~signiture = 3.5; // time signiture
-~record = false; // set to true to enable recording
+~record = true; // set to true to enable recording
 
 // These probalities control which transformation is applied to determine the next chord
 ~weights = [
@@ -224,7 +224,7 @@ m = MarkovSet([
 		\degree, [0,1,2,3]-2,
 		\atk, 4,
 		\rel, 2.5,
-		\amp, 0.125,
+		\amp, 0.08,
 		\legato, 0.6,
 		\out, ~bus_master,
 	).play(t, quant: 7);
@@ -300,6 +300,7 @@ m = MarkovSet([
 })
 
 .add(\unify_ch -> {
+	\unify_ch.postln;
 
 	Pbindef(\ch).stop;
 	Pdef(\data).stop;
@@ -324,8 +325,6 @@ m = MarkovSet([
 	).play(t, quant: [7, 0, 0.05] );
 
 	Pbindef(\ch, \dur, 7).play(t, quant: 7);
-
-	\unify_ch.postln;
 })
 
 
@@ -336,7 +335,7 @@ m = MarkovSet([
 		\dur, Pseq([3,3,3,2,2,1],inf) / 2,
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pfunc({~data_ev[\bass]}),
-		\amp, Pseq([0.125,0.085,0.085,0.125,0.085,0.125],inf),
+		\amp, Pseq([0.125,0.085,0.085,0.125,0.085,0.125],inf) -0.015,
 		\ctranspose, -24,
 		\pan, Pseg([-0.75,0.75,-0.75],[7,7],repeats: inf),
 		\rel, 0.5,
@@ -348,7 +347,7 @@ m = MarkovSet([
 	Pbindef(\ch,
 		\atk, 1,
 		\rel, 2,
-		\amp, 0.125,
+		\amp, 0.100,
 		\legato, 0.4,
 	);
 	\ch_loatkrel.postln;
@@ -362,7 +361,7 @@ m = MarkovSet([
 		\dur, Prand([0.5,1,1.5],inf),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pseq([0,2,1,3,2,4,3],inf),
-		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
+		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf) + 0.05,
 		\pan, Pseq([-0.5,0.5],inf)
 	).play(t, quant: 7);
 
@@ -376,7 +375,7 @@ m = MarkovSet([
 		\dur, Prand([0.5,1,1.5],inf),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pseq([0,2,1,3,2,4,3],inf) -3,
-		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
+		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf) + 0.05,
 		\pan, Pseq([-0.5,0.5],inf)
 	).play(t, quant: 7);
 
@@ -923,7 +922,7 @@ m = MarkovSet([
 	(3.5 * 2).wait;
 	~events[\begin_ph].fork;
 	((3.5 * 4) - 0.5).wait;
-	~events[\begin_ch].fork;
+	~events[\begin_ch].fork; //sightly lower amp
 	((3.5 * 2) + 0.5).wait;
 	~events[\unify_pm].fork;
 	(3.5 * 2).wait;
@@ -933,7 +932,7 @@ m = MarkovSet([
 	(3.5 * 2).wait;
 	~events[\unify_ch].fork;
 	(3.5 * 8).wait;
-	~events[\begin_bass1].fork; // phrase (8 bar)
+	~events[\begin_bass1].fork; // phrase (8 bar) // slightly lower amp
 	~events[\ch_loatkrel].fork;
 	(3.5 * 8).wait;
 	~events[\begin_bchordm].fork; // phrase (8 bar)
