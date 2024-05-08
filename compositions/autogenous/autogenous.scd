@@ -9,15 +9,15 @@
 // These probalities control which chord follows the previous chord
 ~weights = [
 
-	70, // hexatonic forward major
-	70, // hexatonic forward minor
-	10, // hexatonic backward major
-	10, // hexatonic backward minor
-	50, // dominant major
-	50, // dominant minor
-	10, // subdominant major
-	10, // subdominant minor
-	20,  // parallel
+	70, // m3 up (to major 7th chord)
+	70, // m3 up (to minor 7th chord)
+	10, // m3 down (to major 7th chord)
+	10, // m3 down (to minor 7th chord)
+	50, // p5 up (to major 7th chord)
+	50, // p5 up (to minor 7th chord)
+	10, // p5 down (to major 7th chord)
+	10, // p5 down  (to minor 7th chord)
+	20, // parallel chord
 
 ].normalizeSum;
 
@@ -139,6 +139,7 @@ m = MarkovSet([
 		\freq, 1000,
 		\rel, 0.1,
 		\legato, 0.01,
+		\pan, 0,
 		\amp, Pwhite(0.06,0.175),
 		\out, ~bus_reverb,
 	).play(t, quant: 3.5);
@@ -154,6 +155,7 @@ m = MarkovSet([
 		\freq, 500,
 		\rel, 0.1,
 		\legato, 0.01,
+		\pan, -0.5,
 		\amp, Pwhite(0.06,0.175),
 		\out, ~bus_reverb,
 	).play(t, quant: 3.5);
@@ -168,6 +170,7 @@ m = MarkovSet([
 		\freq, 1500,
 		\rel, 0.1,
 		\legato, 0.01,
+		\pan, 0.5,
 		\amp, Pwhite(0.06,0.175),
 		\out, ~bus_reverb,
 	).play(t, quant: 3.5);
@@ -211,7 +214,7 @@ m = MarkovSet([
 
 .add(\unify_pm -> {
 
-	Pbindef(\pm).quant = 7;
+	Pbindef(\pm).quant = 3.5;
 
 	Pbindef(\pm,
 		\dur, Pseq([
@@ -222,7 +225,8 @@ m = MarkovSet([
 		\amp, Pseq([
 			Pseq([0.175,0.1,0.175,0.1],4),
 			Pseq([0.1,0.175,0.1,0.175],4),
-		],inf);
+		],inf),
+		\pan, 0.0,
 	);
 
 	Pbindef(\pm).reset;
@@ -243,7 +247,8 @@ m = MarkovSet([
 		\amp, Pseq([
 			Pseq([0.175,0.1,0.175,0.1],2),
 			Pseq([0.1,0.175,0.1,0.175],2),
-		],inf);
+		],inf),
+		\pan, 0.5,
 	);
 
 	Pbindef(\pl).reset;
@@ -254,7 +259,7 @@ m = MarkovSet([
 .add(\unify_ph -> {
 
 
-	Pbindef(\ph).quant = 7;
+	Pbindef(\ph).quant = 3.5;
 
 	Pbindef(\ph,
 		\dur, Pseq([
@@ -265,7 +270,8 @@ m = MarkovSet([
 		\amp, Pseq([
 			Pseq([0.175,0.1,0.175,0.1],4),
 			Pseq([0.1,0.175,0.1,0.175],4),
-		],inf);
+		],inf),
+		\pan, -0.5,
 	);
 
 	Pbindef(\ph).reset();
@@ -310,11 +316,12 @@ m = MarkovSet([
 		\dur, Pseq([3,3,3,2,2,1],inf) / 2,
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pfunc({~data_ev[\bass]}),
-		\amp, Pseq([0.15,0.1,0.1,0.15,0.1,0.15],inf),
+		\amp, Pseq([0.125,0.085,0.085,0.125,0.085,0.125],inf),
 		\ctranspose, -24,
-		\pan, Pseg([-0.5,0.5,-0.5],[7,7],repeats: inf),
+		\pan, Pseg([-0.75,0.75,-0.75],[7,7],repeats: inf),
 		\rel, 0.5,
 	).play(t, quant: 7);
+	\begin_bass1.postln;
 })
 
 .add(\ch_loatkrel -> {
@@ -323,7 +330,9 @@ m = MarkovSet([
 		\rel, 2,
 		\amp, 0.125,
 		\legato, 0.4,
-	)
+	);
+	\ch_loatkrel.postln;
+
 })
 
 .add(\begin_bchordm -> {
@@ -332,7 +341,7 @@ m = MarkovSet([
 		\instrument, \sine,
 		\dur, Prand([0.5,1,1.5],inf),
 		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, Pseq([0,2,1,3,2,4,3],inf) + Pseq([Pn(0,14),Pn(1,14),Pn(2,14),Pn(3,14)],inf),
+		\degree, Pseq([0,2,1,3,2,4,3],inf),
 		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
 		\pan, Pseq([-0.5,0.5],inf)
 	).play(t, quant: 7);
@@ -344,7 +353,7 @@ m = MarkovSet([
 
 	Pbindef(\bchordl,
 		\instrument, \sine,
-		\dur, 1,
+		\dur, Prand([0.5,1,1.5],inf),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pseq([0,2,1,3,2,4,3],inf) -3,
 		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
@@ -356,15 +365,10 @@ m = MarkovSet([
 
 .add(\bchordm_regular -> {
 
-	Pbindef(\bchordm).quant = 7;
+	Pbindef(\bchordm).quant = 3.5;
 
 	Pbindef(\bchordm,
-		\instrument, \sine,
 		\dur, 1/2,
-		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, Pseq([0,2,1,3,2,4,3],inf),
-		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
-		\pan, Pseq([-0.5,0.5],inf)
 	);
 
 	Pbindef(\bchordm).reset();
@@ -372,17 +376,25 @@ m = MarkovSet([
 	\bchordm_regular.postln;
 })
 
+.add(\bchordl_regular -> {
+
+	Pbindef(\bchordl).quant = 3.5;
+
+	Pbindef(\bchordl,
+		\dur, 1,
+	);
+
+	Pbindef(\bchordl).reset();
+
+	\bchordl_regular.postln;
+})
+
 .add(\bchordm_contour -> {
 
-	Pbindef(\bchordm).quant = 7;
+	Pbindef(\bchordm).quant = 3.5;
 
 	Pbindef(\bchordm,
-		\instrument, \sine,
-		\dur, 1/2,
-		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pseq([0,2,1,3,2,4,3],inf) + Pseq([Pn(0,14),Pn(1,14),Pn(2,14),Pn(3,14)],inf),
-		\amp, Pseq([0.2,0.125,0.2,0.125,0.2,0.125,0.125],inf),
-		\pan, Pseq([-0.5,0.5],inf)
 	);
 
 	Pbindef(\bchordm).reset();
@@ -391,7 +403,7 @@ m = MarkovSet([
 })
 
 .add(\pm_change1 -> {
-	Pbindef(\pm).quant = 7;
+	Pbindef(\pm).quant = 3.5;
 
 	Pbindef(\pm,
 		\dur, Pseq([
@@ -411,7 +423,7 @@ m = MarkovSet([
 })
 
 .add(\ph_change1 -> {
-	Pbindef(\ph).quant = 7;
+	Pbindef(\ph).quant = 3.5;
 
 	Pbindef(\ph,
 		\dur, Pseq([
@@ -422,7 +434,8 @@ m = MarkovSet([
 		\amp, Pseq([
 			Pseq([0.175,0.1,0.175,0.1,0.1],4),
 			Pseq([0.1,0.175,0.1,0.175,0.175],4),
-		],inf);
+	],inf),
+		\pan, 0.5,
 	);
 
 	Pbindef(\ph).reset;
@@ -441,7 +454,8 @@ m = MarkovSet([
 		\amp, Pseq([
 			Pseq([0.175,0.1,0.175,0.1,0.1,0.175,0.1,0.175],2),
 			Pseq([0.1,0.175,0.1,0.175,0.175,0.1,0.175,0.1],2),
-		],inf);
+		],inf),
+		\pan, -0.5,
 	);
 
 	Pbindef(\pl).reset;
@@ -464,6 +478,7 @@ m = MarkovSet([
 			Pseq([0.1,0.175,0.1,0.175,0.175,0.1,0.175,0.1],2),
 		],inf) * 1.5,
 		\band_width, 5,
+		\pan, Pseq([1,-1],inf),
 		\out, ~bus_reverb,
 		\legato, 0.1,
 	).play(t, quant: 7);
@@ -478,27 +493,44 @@ m = MarkovSet([
 		\instrument, \perc,
 		\dur, 1/2,
 		\freq, 2000,
-		\rel, Pseq([Pseq([0.3,0.125],6),Pseq([0.125,0.3],6)],inf),
+		\rel, Pseq([0.3,0.125],inf),
 		\band_width, 1000,
-		\amp, Pseq([Pseq([0.1,0.05],6),Pseq([0.05,0.1],6)],inf),
+		\amp, Pseq([0.1,0.05],inf),
 		\out, ~bus_reverb,
+		\pan, Pseq([-0.25,0.25],inf),
 		\legato, 0.1,
-	).play(t, quant: 7);
+	).play(t, quant: 3.5);
 
 	\begin_drum.postln;
+})
+
+.add(\change_drum -> {
+
+	Pbindef(\drum).quant = 3.5;
+
+	Pbindef(\drum,
+		\instrument, \perc,
+		\rel, Pseq([Pseq([0.3,0.125],7),0.125],inf),
+		\amp, Pseq([Pseq([0.1,0.05],7),0.05],inf),
+		\pan, Pseq([-0.25,0.25],inf),
+	);
+
+	Pbindef(\drum).reset;
+
+	\change_drum.postln;
 })
 
 .add(\begin_bchordh -> {
 
 	Pbindef(\bchordh,
 		\instrument, \sine,
-		\dur, 1/3,
+		\dur, 1/2,
 		\scale, Pfunc({~data_ev[\scale]}),
 		\atk, 0.01, \rel, 0.5,
 		\degree, Pxrand([0,1,2,3],inf) + 8,
-		\amp, Pseq([0.125,0.08,0.07],inf),
+		\amp, Pseq([0.09,0.065,0.065],inf),
 		\pan, Pseg([-0.5,0.5,-0.5],[7,7],repeats: inf),
-	).play(t, quant: 7);
+	).play(t, quant: 3.5);
 
 	\begin_bchordh.postln;
 })
@@ -512,6 +544,7 @@ m = MarkovSet([
 		\degree, Pfunc({~data_ev[\bass]}),
 		\amp, 0.15,
 		\ctranspose, -12,
+		\pan, Pseq([0,0.75,0,-0.75],inf),
 		\pwidth, 0.8,
 		\rel, 0.5,
 		\atk, 0.5
@@ -522,46 +555,109 @@ m = MarkovSet([
 
 .add(\bchordh_faster -> {
 
-	Pbindef(\bchordh).quant = 7;
+	Pbindef(\bchordh).quant = 3.5;
 
 	Pbindef(\bchordh,
 		\instrument, \sine,
-		\dur, 1/4,
-		\scale, Pfunc({~data_ev[\scale]}),
-		\degree, Pxrand([0,1,2,3],inf) + 8,
-		\amp, Pseq([0.125,0.08,0.07,0.06],inf),
-		\pan, Pseg([-0.5,0.5,-0.5],[7,7],repeats: inf),
+		\dur, 1/3,
 	);
 
 	Pbindef(\bchordh).reset();
 
-	\begin_bchordh.postln;
+	\bchordh_faster.postln;
+})
+
+.add(\bchordh_faster2 -> {
+
+	Pbindef(\bchordh).quant = 3.5;
+
+	Pbindef(\bchordh,
+		\instrument, \sine,
+		\dur, 1/4,
+	);
+
+	Pbindef(\bchordh).reset();
+
+	\bchordh_faster2.postln;
+})
+
+.add(\bchordh_slower -> {
+
+	Pbindef(\bchordh).quant = 3.5;
+
+	Pbindef(\bchordh,
+		\instrument, \sine,
+		\dur, 1/3,
+	);
+
+	Pbindef(\bchordh).reset();
+
+	\bchordh_slower.postln;
+})
+
+.add(\bchordh_slower2 -> {
+
+	Pbindef(\bchordh).quant = 3.5;
+
+	Pbindef(\bchordh,
+		\instrument, \sine,
+		\dur, 1/2,
+	);
+
+	Pbindef(\bchordh).reset();
+
+	\bchordh_slower2.postln;
 })
 
 .add(\begin_melup -> {
 
 	Pbindef(\melup,
 		\instrument, \saw,
-		\dur, Pseq([Rest(3),4],inf),
+		\dur, Pseq([Rest(4),3],inf),
 		\scale, Pfunc({~data_ev[\scale]}),
 		\degree, Pfunc({~data_ev[\bass]}),
 		\amp, 0.09,
 		\pwidth, 0.8,
 		\ctranspose, 12,
 		\cutoff, 2000,
-		\rel, 0.5,
+		\pan, Pseq([0,-0.75,0,0.75],inf),
+		\rel, 2,
 		\atk, 0.5,
 	).play(t, quant: 7);
 
 	\begin_melup.postln;
 })
 
+.add(\begin_bass3 -> {
+
+	Pbindef(\bass3,
+		\instrument, \saw,
+		\dur, 7,
+		\scale, Pfunc({~data_ev[\scale]}),
+		\degree, Pfunc({~data_ev[\bass]}),
+		\amp, 0.085,
+		\ctranspose, -36,
+		\pwidth, 0.8,
+		\rel, 0.5,
+		\atk, 0.5
+	).play(t, quant: 7);
+
+	\begin_bass3.postln;
+})
+
 .add(\pm_change2 -> {
-	Pbindef(\pm).quant = 7;
+	Pbindef(\pm).quant = 3.5;
 
 	Pbindef(\pm,
-		\dur, Pbjorklund2(6,7,inf,1) / 2,
-		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.1],inf)
+		\dur, Pseq([
+			Pbjorklund2(6,7,4,0),
+			Pbjorklund2(7,7,4,0),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.175,0.1,0.1,0.175],4),
+			Pseq([0.1,0.175,0.1,0.175,0.175,0.1],4),
+		],inf),
 	);
 
 	Pbindef(\pm).reset;
@@ -570,11 +666,19 @@ m = MarkovSet([
 })
 
 .add(\ph_change2 -> {
-	Pbindef(\ph).quant = 7;
+	Pbindef(\ph).quant = 3.5;
 
 	Pbindef(\ph,
-		\dur, Pbjorklund2(6,7,inf,2) / 2,
-		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.1],inf)
+		\dur, Pseq([
+		Pbjorklund2(6,7,4,2),
+		Pbjorklund2(7,7,4,2),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.175,0.1,0.1],4),
+			Pseq([0.1,0.175,0.1,0.175,0.175],4),
+		],inf),
+		\pan, -0.5,
 	);
 
 	Pbindef(\ph).reset;
@@ -585,8 +689,16 @@ m = MarkovSet([
 	Pbindef(\pl).quant = 7;
 
 	Pbindef(\pl,
-		\dur, Pbjorklund2(11,14,inf,1) / 2,
-		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.15,0.1,0.1],inf)
+		\dur, Pseq([
+			Pbjorklund2(9,14,2,0),
+			Pbjorklund2(11,14,2,0),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.175,0.1,0.1,0.175,0.1,0.175,0.1],2),
+			Pseq([0.1,0.175,0.1,0.175,0.175,0.1,0.175,0.1,0.175],2),
+		],inf),
+		\pan, 0.5,
 	);
 
 	Pbindef(\pl).reset;
@@ -594,11 +706,18 @@ m = MarkovSet([
 })
 
 .add(\pm_change3 -> {
-	Pbindef(\pm).quant = 7;
+	Pbindef(\pm).quant = 3.5;
 
 	Pbindef(\pm,
-		\dur, Pbjorklund2(3,7,inf,1) / 2,
-		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.1],inf)
+		\dur, Pseq([
+			Pbjorklund2(3,7,4,0),
+			Pbjorklund2(4,7,4,0),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.1],4),
+			Pseq([0.1,0.175,0.175],4),
+		],inf);
 	);
 
 	Pbindef(\pm).reset;
@@ -607,11 +726,24 @@ m = MarkovSet([
 })
 
 .add(\ph_change3 -> {
-	Pbindef(\ph).quant = 7;
+	Pbindef(\ph).quant = 3.5;
 
 	Pbindef(\ph,
 		\dur, Pbjorklund2(3,7,inf,2) / 2,
 		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.1],inf)
+	);
+
+	Pbindef(\ph,
+		\dur, Pseq([
+		Pbjorklund2(3,7,4,2),
+		Pbjorklund2(4,7,4,2),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.1],4),
+			Pseq([0.1,0.175,0.175],4),
+		],inf),
+		\pan, 0.5,
 	);
 
 	Pbindef(\ph).reset;
@@ -626,13 +758,26 @@ m = MarkovSet([
 		\amp, Pseq([0.175,0.1,0.1,0.15,0.1,0.15,0.1,0.1],inf)
 	);
 
+	Pbindef(\pl,
+		\dur, Pseq([
+			Pbjorklund2(6,14,2,0),
+			Pbjorklund2(7,14,2,0),
+		],inf) / 2,
+
+		\amp, Pseq([
+			Pseq([0.175,0.1,0.175,0.1,0.1,0.175],2),
+			Pseq([0.1,0.175,0.1,0.175,0.175,0.1],2),
+		],inf),
+		\pan, -0.5,
+	);
+
 	Pbindef(\pl).reset;
 	\pl_change3.postln;
 })
 
 .add(\bchordm_nonreg -> {
 
-	Pbindef(\bchordm).quant = 7;
+	Pbindef(\bchordm).quant = 3.5;
 
 	Pbindef(\bchordm,
 		\instrument, \sine,
@@ -651,7 +796,7 @@ m = MarkovSet([
 
 .add(\bchordl_nonreg -> {
 
-	Pbindef(\bchordm).quant = 7;
+	Pbindef(\bchordm).quant = 3.5;
 
 	Pbindef(\bchordm,
 		\instrument, \sine,
@@ -742,6 +887,11 @@ m = MarkovSet([
 
 })
 
+.add(\stop_bass3 -> {
+	t.play({Pdef(\bass3).stop}, quant: 3.5);
+
+})
+
 ;
 
 ~piece = Routine({
@@ -751,9 +901,9 @@ m = MarkovSet([
 	~events[\begin_pl].fork;
 	(3.5 * 2).wait;
 	~events[\begin_ph].fork;
-	(3.5 * 4 - 0.5).wait;
+	((3.5 * 4) - 0.5).wait;
 	~events[\begin_ch].fork;
-	(3.5 * 2 + 0.5).wait;
+	((3.5 * 2) + 0.5).wait;
 	~events[\unify_pm].fork;
 	(3.5 * 2).wait;
 	~events[\unify_pl].fork;
@@ -761,15 +911,15 @@ m = MarkovSet([
 	~events[\unify_ph].fork;
 	(3.5 * 2).wait;
 	~events[\unify_ch].fork;
-	(3.5 * 9).wait;
-	~events[\begin_bass1].fork;
+	(3.5 * 8).wait;
+	~events[\begin_bass1].fork; // phrase (8 bar)
 	~events[\ch_loatkrel].fork;
 	(3.5 * 8).wait;
-	~events[\begin_bchordm].fork;
+	~events[\begin_bchordm].fork; // phrase (8 bar)
 	(3.5 * 4).wait;
 	~events[\begin_bchordl].fork;
 	(3.5 * 4).wait;
-	~events[\bchordm_regular].fork;
+	~events[\bchordm_regular].fork; // phrase (8 bar)
 	(3.5 * 2).wait;
 	~events[\ph_change1].fork;
 	(3.5  * 2).wait;
@@ -777,24 +927,32 @@ m = MarkovSet([
 	(3.5 * 2).wait;
 	~events[\pl_change1].fork;
 	(3.5 * 2).wait;
+	~events[\bchordl_regular].fork; // phrase (8 bar)
 	~events[\bchordm_contour].fork;
-	(3.5 * 2).wait;
-	~events[\begin_pll].fork;
-	(3.5 * 2).wait;
-	~events[\begin_bchordh].fork;
 	(3.5 * 4).wait;
-	~events[\begin_drum].fork;
+	~events[\begin_pll].fork;
+	(3.5 * 4).wait;
+	~events[\begin_bchordh].fork; // phrase (8 bar)
 	(3.5 * 4).wait;
 	~events[\begin_bass2].fork;
 	~events[\begin_melup].fork;
 	(3.5 * 4).wait;
+	~events[\begin_drum].fork; // phrase (8 bar)
+	(3.5 * 4).wait;
+	~events[\bchordh_faster].fork;
+	(3.5 * 4).wait;
+	~events[\change_drum].fork; // phrase (8 bar)
+	(3.5  * 2).wait;
 	~events[\ph_change2].fork;
 	(3.5  * 2).wait;
+	~events[\bchordh_faster2].fork;
 	~events[\pm_change2].fork;
 	(3.5 * 2).wait;
 	~events[\pl_change2].fork;
+	(3.5 * 2).wait;
+	~events[\begin_bass3].fork; // phrase // timing here, move this
 	(3.5 * 8).wait;
-	~events[\stop_bchordh].fork;
+	~events[\bchordh_slower].fork; // phrase
 	(3.5 * 2).wait;
 	~events[\ph_change3].fork;
 	(3.5  * 2).wait;
@@ -802,28 +960,33 @@ m = MarkovSet([
 	(3.5 * 2).wait;
 	~events[\pl_change3].fork;
 	(3.5 * 2).wait;
-	~events[\stop_ph].fork;
+	~events[\bchordh_slower2].fork;
+	~events[\stop_ph].fork; // phrase
 	(3.5 * 2).wait;
 	~events[\stop_pm].fork;
 	(3.5 * 2).wait;
 	~events[\stop_pl].fork;
 	(3.5 * 2).wait;
-	~events[\bchordm_nonreg].fork;
-	(3.5 * 1).wait;
-	~events[\bchordl_nonreg].fork;
-	(3.5 * 1).wait;
 	~events[\stop_drum].fork;
+	~events[\stop_bchordh].fork;
+	(3.5 * 2).wait;
+	~events[\bchordm_nonreg].fork; // phrase
+	(3.5 * 2).wait;
+	~events[\bchordl_nonreg].fork;
+	(3.5 * 2).wait;
+	// do something here
 	(3.5 * 2).wait;
 	~events[\stop_pll].fork;
 	(3.5 * 2).wait;
-	~events[\stop_bass1].fork;
-	(3.5 * 2).wait;
-	~events[\stop_bass2].fork;
-	~events[\stop_melup].fork;
+	~events[\stop_bass1].fork; // phrase
 	(3.5 * 4).wait;
+	~events[\stop_bass3].fork;
+	~events[\stop_melup].fork; // stagger these
+	(3.5 * 8).wait;
 	~events[\stop_bchordl].fork;
-	(3.5 * 4).wait;
-	~events[\stop_ch].fork;
+	~events[\stop_bass2].fork;
+	(3.5 * 8).wait;
+	~events[\stop_ch].fork; // phrase
 	(3.5 * 8).wait;
 	~events[\stop_bchordm].fork;
 	~events[\data_stop].fork;
@@ -836,8 +999,9 @@ Pdef.removeAll;
 Pbindef.removeAll;
 ~data_ev = nil;
 ~piece.reset;
-~piece.play(t, quant: [7]);
+~piece.play(t, quant: [7,-0.1]);
 )
+
 
 // fix overlapping chord issue
 // chord too loud in comparison with percussion
