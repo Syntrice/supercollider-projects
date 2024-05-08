@@ -1,24 +1,38 @@
+/* 1) Firstly, configure and run the following setup code */
+
 (
-// --- Global Parameters and Setup ---
+// --- Audio Device Settings ---
+// please configure your audio device settings here, according to your setup
 
-~tempo = 56;
-~signiture = 4;
-~stereoOut = false;
-~record = true;
+~audio_device = "ASIO : Focusrite USB ASIO";
+~numOutputBusChannels = 2;
+~numInputBusChannels = 2;
 
+//~audio_device = "ASIO : MOTU Audio ASIO";
+//~numOutputBusChannels = 14;
+//~numInputBusChannels = 32;
+
+// --- Global Parameters ---
+// adjust these parameters and run this code block before playing the piece
+
+~tempo = 56; // tempo
+~signiture = 4; // time signiture
+~stereoOut = false; // set to true if using a stereo system
+~record = true; // set to true to enable recording. Interleaved surround sound and stereo mix files will be created. 
+
+// --- Setup Code ---
+
+// Load the server side setup code - this file should be placed in the same folder as the current file
 "from_the_void_setup.scd".loadRelative;
-)
 
-// --- Piece Setup ---
-
-(
 // Midi notes for melody 1 and melody 2.
 ~melody = #[
 	[64,66,75,73,68,69,71,69,71,73,68,66,75,76], // 329.64 to 659.26 hz
 	[49,51,59,57,52,54,56,54,56,57,52,51,59,61] // 138.59 to 277.18
 ];
 
-// A dictionary of events to be executed throughout the piece
+
+// A dictionary containing all performance events
 ~events = Dictionary()
 
 .add(\noise_mid_start -> {
@@ -546,11 +560,10 @@
 
 
 
-// A routine to execute the above events
+// A routine which plays the performance events in sequence, with correct timings.
 
 ~piece = Routine({
 
-	Ndef.clear();
 	Ndef(\noise_band_width, {\val.kr(200)});
 	Ndef(\melody_amp, {\val.kr(0.05)});
 	Ndef(\tapping_amp, {\val.kr(0.025)});
@@ -640,15 +653,20 @@
 	4.wait;
 	if (~record, {~stopRecording.()});
 });
+
+~play_piece = {
+	t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
+	Pdef.removeAll;
+	Pbindef.removeAll;
+	Ndef.clear();
+	~piece.reset;
+	~piece.play(t, quant: 4);
+};
+
 )
 
-// --- Play ---
-
-(
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
-~piece.reset;
-~piece.play(t, quant: 4);
-)
+/* 2) Secondly, run this function to begin performance of the work */
+~play_piece.();
 
 
 

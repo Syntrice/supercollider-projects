@@ -1,16 +1,16 @@
+/*
+This file contains setup code for the composition "From the Void". It should not be run directly, but placed in the same folder as from_the_void_setup.scd, and will be run automatically when executing the setup code.
+*/
+
 (
-// -- Setup ---
 
 if (s.serverRunning.not, {
 	"booting server".postln;
 	s.boot;
 	o = Server.default.options;
-	o.device = "ASIO : Focusrite USB ASIO";
-	//o.device = "ASIO : MOTU Audio ASIO";
-	//o.hardwareBufferSize = 1024; // high buffer size to reduce audio artifacts
-	//s.latency = 0.3; // higher latency to reduce audio artifacts
-	s.options.numOutputBusChannels = 14;
-	s.options.numInputBusChannels = 32;
+	o.device = ~audio_device;
+	s.options.numOutputBusChannels = ~numOutputBusChannels;
+	s.options.numInputBusChannels = ~numInputBusChannels;
 	Server.default.reboot;
 	"booting complete".postln;
 });
@@ -28,9 +28,10 @@ ServerQuit.add(~cleanup);
 s.newAllocators;
 
 s.waitForBoot({
-	"setting up".postln;
+	"setting up master / effects synths".postln;
 
-	// --- Channels ---
+	// --- Master / Effect Synths ---
+
 	SynthDef(\master, {
 		arg in;
 		var snd, l, r, c, lfe, ls, rs, bsl, bsr, bc, r_mix, l_mix, mix;
@@ -69,8 +70,7 @@ s.waitForBoot({
 	}
 	).add;
 
-	s.sync;
-
+	// Reverb
 	SynthDef(\reverb, {
 		arg in;
 		var snd, input, leak;
@@ -113,6 +113,8 @@ s.waitForBoot({
 	ServerTree.run;
 
 	// --- Synths ---
+
+	"setting up sound synths".postln;
 
 	// Noise engine
 	SynthDef.new(\noise_engine) {
@@ -178,8 +180,6 @@ s.waitForBoot({
 		Out.ar(\out.kr(~bus_master), output)
 	}.add;
 
-	s.sync;
-
 	// Impulse
 	SynthDef.new(\impulse) {
 		var noise, partials, band_width, freq, temp, amp_env, send, dtune, pamp, pdrift, pan, output;
@@ -244,8 +244,6 @@ s.waitForBoot({
 		Out.ar(\out.kr(~bus_master), output)
 	}.add;
 
-	s.sync;
-
 	// Percussion
 	SynthDef(\perc, {
 		var snd, env, temp, freq, band_width, output;
@@ -284,7 +282,10 @@ s.waitForBoot({
 
 	s.sync;
 
-	// --- Functions ---
+	// --- Helper Functions ---
+
+	
+	"setting up helper functions".postln;
 
 	// Ndef modulation function
 	~parameterChange = {
@@ -365,6 +366,10 @@ s.waitForBoot({
 		value;
 	};
 
+	// Functions to start and stop recording
+
+	
+	"setting up recording functions".postln;
 
 	~startRecording = {
 		if(~stereoOut, {
@@ -391,8 +396,6 @@ s.waitForBoot({
 		});
 	};
 
-	"setup complete!".postln;
+	"initial setup complete!".postln;
 });
 )
-
-Synth(\perc, [\out, ~bus_reverb]);

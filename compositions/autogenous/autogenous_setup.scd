@@ -7,7 +7,7 @@ This file contains setup code for the composition "Autogenous". It should not be
 if (s.serverRunning.not, {
 	"booting server".postln;
 	o = Server.default.options;
-	o.device = "ASIO : Focusrite USB ASIO";
+	o.device = ~audio_device;
 	Server.default.reboot;
 	"booting complete".postln;
 });
@@ -25,7 +25,8 @@ ServerQuit.add(~cleanup);
 s.newAllocators;
 
 s.waitForBoot({
-	"setting up".postln;
+
+	"setting up master / effects synths".postln;
 
 	// --- Master / Effect Synths ---
 
@@ -35,7 +36,7 @@ s.waitForBoot({
 		var snd;
 
 		snd = In.ar(in, 2);
-		snd = Limiter.ar(snd, -6.dbamp); // limiter for a clipping failsafe
+		snd = Limiter.ar(snd, -3.dbamp); // limiter for a clipping failsafe
 
 		Out.ar(\out.kr(0), snd);
 	}).add;
@@ -65,6 +66,8 @@ s.waitForBoot({
 	ServerTree.run;
 
 	// --- Synths ---
+
+	"setting up sound synths".postln;
 
 	// Unison sine
 	SynthDef(\sine, {
@@ -203,6 +206,9 @@ s.waitForBoot({
 	};
 	).add;
 
+
+	"setting up recording functions".postln;
+
 	// Functions to start and stop recording
 
 	~startRecording = {
@@ -216,6 +222,6 @@ s.waitForBoot({
 		~stereo_recorder.stopRecording;
 	};
 
-	"setup complete!".postln;
+	"initial setup complete!".postln;
 });
 )

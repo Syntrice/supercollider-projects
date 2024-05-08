@@ -1,6 +1,4 @@
-
-
-/* Firstly, the required Quarks "Bjorklun" and "MathLib" must be installed.
+/* 1) Firstly, the required Quarks "Bjorklun" and "MathLib" must be installed.
 Run the below code block, then recompile the class library using "Language > Recompile Class Library"" in SC IDE. */
 
 (
@@ -8,7 +6,16 @@ Quarks.install("Bjorklund");
 Quarks.install("MathLib");
 )
 
+/* 2) Secondly, configure and run the following setup code */
+
 (
+
+// --- Audio Device Settings ---
+// please configure your audio device settings here, according to your setup
+
+~audio_device = "ASIO : Focusrite USB ASIO";
+
+//~audio_device = "ASIO : MOTU Audio ASIO";
 
 // --- Global Parameters ---
 // adjust these parameters and run this code block before playing the piece
@@ -964,7 +971,7 @@ m = MarkovSet([
 	(3.5 * 2).wait;
 	~events[\pl_change2].fork;
 	(3.5 * 2).wait;
-	~events[\begin_bass3].fork; // phrase // timing here, move this
+	~events[\begin_bass3].fork; // phrase
 	(3.5 * 8).wait;
 	~events[\bchordh_slower].fork; // phrase
 	(3.5 * 2).wait;
@@ -995,7 +1002,7 @@ m = MarkovSet([
 	~events[\stop_bass1].fork; // phrase
 	(3.5 * 4).wait;
 	~events[\stop_bass3].fork;
-	~events[\stop_melup].fork; // stagger these
+	~events[\stop_melup].fork;
 	(3.5 * 8).wait;
 	~events[\stop_bchordl].fork;
 	~events[\stop_bass2].fork;
@@ -1020,5 +1027,5 @@ m = MarkovSet([
 
 )
 
-// Now run this function to begin perfomance of the piece
+/* 3) Thirdly, run this function to begin performance of the work */
 ~play_piece.();
