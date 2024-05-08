@@ -1,12 +1,23 @@
+
+
+/* Firstly, the required Quarks "Bjorklun" and "MathLib" must be installed.
+Run the below code block, then recompile the class library using "Language > Recompile Class Library"" in SC IDE. */
+
+(
+Quarks.install("Bjorklund");
+Quarks.install("MathLib");
+)
+
 (
 
 // --- Global Parameters ---
+// adjust these parameters and run this code block before playing the piece
 
-~tempo = 120;
-~signiture = 3.5;
-~record = false;
+~tempo = 120; // tempo
+~signiture = 3.5; // time signiture
+~record = false; // set to true to enable recording
 
-// These probalities control which chord follows the previous chord
+// These probalities control which transformation is applied to determine the next chord
 ~weights = [
 
 	70, // m3 up (to major 7th chord)
@@ -17,15 +28,18 @@
 	50, // p5 up (to minor 7th chord)
 	10, // p5 down (to major 7th chord)
 	10, // p5 down  (to minor 7th chord)
-	20, // parallel chord
+	20, // parallel major / minor 7th
 
 ].normalizeSum;
 
-// --- Setup ---
+~starting_chord = \C;
 
-"minimalism_setup.scd".loadRelative;
+// --- Setup Code ---
 
-// Dictionary of all the chords used in the piece
+// Load the server side setup code - this file should be placed in the same folder as the current file
+"autogenous_setup.scd".loadRelative;
+
+// Dictionary mapping each chord used in the work to the corresponding pitch class sets
 ~chords = Dictionary[
 	\C -> [0,4,7,11], //C
 	\Cm -> [0,3,7,10], //C
@@ -55,7 +69,7 @@
 	\Bm -> [2,6,9,11], // B
 ];
 
-// just a mapping of which note in each array is the root of the chord
+// Dictionary mapping the root note to the corresponding index in the pitch class sets
 ~roots = Dictionary[
 	\C -> 0, //C
 	\Cm -> 0, //C
@@ -85,7 +99,7 @@
 	\Bm -> 3, // B
 ];
 
-// A Markov set mapping the weights onto different chords
+// A Markov set which maps the possible chord states to the weights defined above
 m = MarkovSet([
 	[\C, [\Ds, \Dsm, \A, \Am, \G, \Gm, \F, \Fm, \Cm], ~weights],
 	[\Cm, [\Ds, \Dsm, \A, \Am, \G, \Gm, \F, \Fm, \C], ~weights],
@@ -124,11 +138,10 @@ m = MarkovSet([
 	[\Bm, [\D, \Dm, \Gs, \Gsm, \Fs, \Fsm, \E, \Em, \B], ~weights],
 ]);
 
+// The starting chord to begin with
+~chord_state = ~starting_chord;
 
-// This Pdef is used to iterate through the states, and collect relevant information for performance
-~chord_state = \C;
-
-// A dictionary of performance events
+// A dictionary containing all performance events
 ~events = Dictionary()
 
 .add(\begin_pm -> {
@@ -894,6 +907,7 @@ m = MarkovSet([
 
 ;
 
+// A routine which plays the performance events in sequence, with correct timings.
 ~piece = Routine({
 	"playing".postln;
 	~events[\begin_pm].fork;
@@ -990,25 +1004,21 @@ m = MarkovSet([
 	(3.5 * 8).wait;
 	~events[\stop_bchordm].fork;
 	~events[\data_stop].fork;
+	(3.5 * 2).wait;
+	if (~record, {~stopRecording.()});
 });
+
+~play_piece = {
+	t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
+	Pdef.removeAll;
+	Pbindef.removeAll;
+	~data_ev = nil;
+	~piece.reset;
+	if (~record, {~startRecording.()});
+	~piece.play(t, quant: [7,-0.1]);
+};
+
 )
 
-(
-t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0, {t.beatsPerBar_(~signiture)});
-Pdef.removeAll;
-Pbindef.removeAll;
-~data_ev = nil;
-~piece.reset;
-~piece.play(t, quant: [7,-0.1]);
-)
-
-
-// fix overlapping chord issue
-// chord too loud in comparison with percussion
-// bass too loud also
-// bchord regular too much delay after,
-// bchord hi too loud
-// delay is weird here
-// melup and bass2 are too loud
-// fix timing being off
-// add stop_pll
+// Now run this function to begin perfomance of the piece
+~play_piece.();

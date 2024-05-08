@@ -1,5 +1,8 @@
+/*
+This file contains setup code for the composition "Autogenous". It should not be run directly, but placed in the same folder as autogenous.scd, and will be run automatically when executing the setup code.
+*/
+
 (
-// -- Setup ---
 
 if (s.serverRunning.not, {
 	"booting server".postln;
@@ -24,7 +27,7 @@ s.newAllocators;
 s.waitForBoot({
 	"setting up".postln;
 
-	// --- Channels ---
+	// --- Master / Effect Synths ---
 
 	// Master
 	SynthDef(\master, {
@@ -32,7 +35,7 @@ s.waitForBoot({
 		var snd;
 
 		snd = In.ar(in, 2);
-		snd = Limiter.ar(snd, -6.dbamp);
+		snd = Limiter.ar(snd, -6.dbamp); // limiter for a clipping failsafe
 
 		Out.ar(\out.kr(0), snd);
 	}).add;
@@ -199,6 +202,19 @@ s.waitForBoot({
 		Out.ar(\out.kr(~bus_reverb), snd);
 	};
 	).add;
+
+	// Functions to start and stop recording
+
+	~startRecording = {
+
+			~stereo_recorder = Recorder(s);
+			~stereo_recorder.filePrefix = "AUTOGENOUS_";
+			~stereo_recorder.record(bus: ~bus_stereo_record, numChannels: 2);
+	};
+
+	~stopRecording = {
+		~stereo_recorder.stopRecording;
+	};
 
 	"setup complete!".postln;
 });
