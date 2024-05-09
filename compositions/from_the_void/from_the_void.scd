@@ -580,7 +580,7 @@
 
 	~parameterChange.(Ndef(\noise_band_width), Env([200,5,1],[135,45]),t,16);
 	~parameterChange.(Ndef(\melody_amp), Env( [0.10, 0.15, 0.25, 0.3, 0.35, 0.45, 0.75, 0.35, 0.2, 0.125,0.05],[5,10,15,15,15,55,10,30,16,25]),t,1);
-	~parameterChange.(Ndef(\lfe_amp),    Env( [0.20, 0.30, 0.35, 0.4, 0.45, 0.55, 0.75, 0.50, 0.45,0.35, 0.35],[5,10,15,15,15,55,10,30,16,25]),t,1);
+	~parameterChange.(Ndef(\lfe_amp),    Env( [0.10, 0.20, 0.30, 0.4, 0.45, 0.55, 0.75, 0.50, 0.45,0.35, 0.35],[5,10,15,15,15,55,10,30,16,25]),t,1);
 	~parameterChange.(Ndef(\tapping_amp), Env([0.05, 0.075,0.2,  0.2, 0.25, 0.35, 0.55, 0.25, 0.15,0.075,0.05],[5,15,15,15,15,55,10,30,16,25]),t,1);
 	~parameterChange.(Ndef(\crackles_amp), Env([0.05,0.075,0.15, 0.15,0.20, 0.30, 0.55, 0.15, 0.10,0.05, 0.05],[5,15,15,15,15,55,10,30,16,25]),t,1);
 
@@ -653,7 +653,7 @@
 	4.wait;
 	if (~record, {~stopRecording.()});
 });
-//201
+
 ~play_piece = {
 	t = TempoClock.new(~tempo/60).permanent_(true).schedAbs(0,{t.beatsPerBar_(~signiture)});
 	Pdef.removeAll;
@@ -667,6 +667,4 @@
 
 /* 2) Secondly, run this function to begin performance of the work */
 ~play_piece.();
-
-
 
