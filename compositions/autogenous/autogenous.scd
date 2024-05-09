@@ -1,3 +1,6 @@
+// "Autogenous"
+// Made with Supercollider 3.13.0
+
 /* 1) Firstly, the required Quarks "Bjorklun" and "MathLib" must be installed.
 Run the below code block, then recompile the class library using "Language > Recompile Class Library"" in SC IDE. */
 

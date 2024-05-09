@@ -1,3 +1,6 @@
+// "From the Void"
+// Made with Supercollider 3.13.0
+
 /*
 This file contains setup code for the composition "From the Void". It should not be run directly, but placed in the same folder as from_the_void_setup.scd, and will be run automatically when executing the setup code.
 */
@@ -284,7 +287,7 @@ s.waitForBoot({
 
 	// --- Helper Functions ---
 
-	
+
 	"setting up helper functions".postln;
 
 	// Ndef modulation function
@@ -368,7 +371,7 @@ s.waitForBoot({
 
 	// Functions to start and stop recording
 
-	
+
 	"setting up recording functions".postln;
 
 	~startRecording = {

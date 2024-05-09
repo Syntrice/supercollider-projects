@@ -1,3 +1,6 @@
+// "Autogenous"
+// Made with Supercollider 3.13.0
+
 /*
 This file contains setup code for the composition "Autogenous". It should not be run directly, but placed in the same folder as autogenous.scd, and will be run automatically when executing the setup code.
 */
